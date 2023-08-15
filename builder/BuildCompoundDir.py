@@ -6,191 +6,14 @@ import math
 import os
 import xml.etree.ElementTree as ET
 
-from pydantic import BaseModel
 from requests import Session
-from requests.exceptions import SSLError, ConnectionError, HTTPError, Timeout
-from functools import wraps
+
+from builder.ancillary_classes.file_handler import _FileHandler
+from builder.builder_wrappers.http_exception_angel import http_exception_angel
+from builder_config_files import CompoundBuilderConfig, CompoundBuilderObjs, CompoundBuilderUrls, RuntimeFlags
+from builder_wrappers.xml_exception_angel import xml_exception_angel
 
 
-class RuntimeFlags(BaseModel):
-    spectra: bool = False
-    citations: bool = True
-    wikipathways: bool = True
-    kegg: bool = True
-    cactus: bool = True
-    rhea: bool = True
-    verbose_logging: bool = False
-    timeout: int = 900
-    mapping: dict = {
-        'ms_from_mona_wrapper': 'spectra',
-        'citation_wrapper': 'citations',
-        'wikipathways_wrapper': 'wikipathways',
-        'kegg_wrapper': 'kegg',
-        'cactus_wrapper': 'cactus',
-        'reactions_wrapper': 'rhea'
-    }
-
-
-class CompoundBuilderObjs(BaseModel):
-    """
-    A collection of various keys and mappings that the builder refers to. Previously these were scattered global
-    variables, or defined in-method. Hopefully collecting them all here will make understanding this script easier than
-     understanding v1. If these various objects don't make sense in isolation, follow the script flow and they might
-     make some more sense. Also, view a MTBLS1234.json file and that also might shed some light.
-    """
-    chebi_ns_map: dict = {
-        "envelop": "http://schemas.xmlsoap.org/soap/envelope/",
-        "chebi": "{http://www.ebi.ac.uk/webservices/chebi}"
-    }
-    chebi_basic_keys: list = [
-        'definition', 'smiles', 'inchi', 'inchiKey', 'charge', 'mass', 'monoisotopicMass', 'chebiAsciiName',
-    ]
-    chebi_adv_keys_map: dict = {
-        'Synonyms': 'synonyms',
-        'IupacNames': 'iupac_names',
-        'Formulae': 'formulae',
-        'Citations': 'citations',
-        'DatabaseLinks': 'database_links',
-        'CompoundOrigins': 'compound_origins',
-        'Species': 'species'
-    }
-
-    chebi_citation_keys = ['source', 'type', 'value']
-    chebi_citation_keys_map: dict = {'source': 'source', 'type': 'type', 'value': 'data'}
-    epmc_citation_keys_map: dict = {
-        'title': 'title',
-        'doi': 'doi',
-        'abstract': 'abstractText',
-        'author': 'authorString',
-    }
-
-    chebi_species_keys: list = ['SpeciesAccession', 'SourceType', 'SourceAccession']
-    chebi_species_via_mapping_file_map: dict = {
-        'Species': None,
-        'SpeciesAccession': 'study',
-        'MAFEntry': 'mafEntry',
-        'Assay': 'assay'
-    }
-
-    # recognise the below is confusing, it is a quirk from the old script, where the key of the database link dict
-    # doesn't match the xml.find search term. So we have a mapping of `database link dict key: search term`.
-    chebi_database_link_map: dict = {
-        'source': 'type',
-        'value': 'data'
-    }
-
-    # map our metabolights compound dict keys to chebi compound dict keys
-    # this might also seem a little confusing, as we have two dicts with similar keys. I have lifted a lot of this
-    # from version 1, and hope to remove it in future updates.
-    ml_compound_chebi_compound_map: dict = {
-        "name": "chebiAsciiName",
-        "definition": "definition",
-        "iupacNames": "IupacNames",
-        "smiles": "smiles",
-        "inchi": "inchi",
-        "inchiKey": "inchiKey",
-        "charge": "charge",
-        "averagemass": "mass",
-        "exactmass": "monoisotopicMass",
-        "formula": "Formulae",
-        "species": "Species",
-        "synonyms": "Synonyms"
-    }
-
-    # specify what kind of empty value to give for a given key if the type associated with that key is not a string
-    ml_compound_absent_value_type_map: dict = {
-        "iupacNames": [],
-        "species": [],
-        "synonyms": []
-    }
-
-    reactions_keys: dict = {
-        "name": "equation",
-        "id": "id",
-        "biopax2": "biopax2",
-        "cmlreact": "cmlreact"
-    }
-
-
-class MtblsWsUrls(BaseModel):
-    metabolights_ws_url: str = "http://www.ebi.ac.uk/metabolights/webservice/"
-    metabolights_ws_study_url: str = f'{metabolights_ws_url}study/'
-    metabolights_ws_studies_list: str = f'{metabolights_ws_study_url}study/list'
-    metabolights_ws_compounds_url: str = f'{metabolights_ws_url}compounds/'
-    metabolights_ws_compounds_list: str = f'{metabolights_ws_compounds_url}list'
-
-
-class KeggUrls(BaseModel):
-    kegg_api: str = "http://rest.kegg.jp/conv/compound/chebi:"
-    kegg_pathways_list_api: str = "http://rest.kegg.jp/link/pathway/"
-    kegg_pathway_api: str = "http://rest.kegg.jp/get/"
-
-
-class MiscUrls(BaseModel):
-    chebi_api: str = "https://www.ebi.ac.uk/webservices/chebi/2.0/test/getCompleteEntity?chebiId="
-    cts_api: str = "http://cts.fiehnlab.ucdavis.edu/service/compound/"
-    cactus_api = "https://cactus.nci.nih.gov/chemical/structure/"
-    epmc_api: str = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query="
-    reactome_url: str = "http://www.reactome.org/download/current/ChEBI2Reactome.txt"
-    rhea_api: str = "https://www.rhea-db.org/rhea/"
-    wikipathways_api: str = "https://webservice.wikipathways.org/findPathwaysByXref?ids="
-    mona_api: str = "http://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=compound.metaData=q=%27name==\%22InChIKey\%22%20and%20value==\%22"
-    new_mona_api: str = "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
-
-
-class CompoundBuilderUrls(BaseModel):
-    mtbls: MtblsWsUrls = MtblsWsUrls()
-    kegg: KeggUrls = KeggUrls()
-    misc_urls: MiscUrls = MiscUrls()
-
-
-class CompoundBuilderConfig:
-    objs: CompoundBuilderObjs = CompoundBuilderObjs()
-    urls: CompoundBuilderUrls = CompoundBuilderUrls()
-    rt_flags: RuntimeFlags = RuntimeFlags()
-
-
-# wrote a decorator to save try/except-ing the same exception in every method
-def xml_exception_angel(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ET.ParseError as e:
-            print(f'XML parsing error occurred: {str(e)}')
-        except AttributeError as e:
-            print(f'Attribute error while calling .find on xml document: {str(func)} {str(e)}')
-
-    return wrapper
-
-
-# wrote a decorator to catch compound_common http request exceptions
-def http_exception_angel(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except KeyError as e:
-            print(f'KeyError when processing http request : {str(e)}')
-        except Timeout as e:
-            print(f'Request timed out when processing http request : {str(e)}')
-        except HTTPError as e:
-            print(f'HTTP Error code received when processing http request : {str(e)}')
-            print(f'args: {str(args)}')
-        except SSLError as e:
-            print(f'Secure Sockets Layer Error when processing http request. Is the endpoint HTTPS enabled?')
-        except ConnectionError as e:
-            logging.exception(str(e))
-            print(f'args: {str(args)}')
-            print(f'ConnectionError when processing http request, is server reachable?: {str(e)}')
-        except json.decoder.JSONDecodeError as e:
-            print(f'JSONDecode error in {str(func)} args:{args} kwargs{kwargs}: {str(e)}')
-
-    return wrapper
-
-
-# I think once the above configs are finalised i will split them out. Script is ok readable as is but want to spare my
-# successors the pain.
 ########################################################################################################################
 #                                                                                                                      #
 #                            Multi-Stage Compound Reference Layer Building Script                                      #
@@ -229,7 +52,7 @@ Stages:
             - Reactome dict, loaded into memory from the reactome.json file.
             - List of all MTBLC id's, retrieved from our legacy java webservice
             - Initialises the compound dict that the script builds up.
-            
+
     Stage 2: Get Chebi Data
         This stage hits the Chebi API for this MTBLC compound ID. Our IDs (excluding the MTBLC portion) are derived 
         directly from chebi. The response from the chebi API is in xml, so we use xml.ET.find to extract out the 
@@ -243,7 +66,7 @@ Stages:
         try / except blocks, one for each attempt to assign a single field to a dictionary.
         Once the advanced dict is ready, the basic and the advanced dict are returned in a new dict together using
          pythons dict unpacking operator like so {**dict1, **dict2}
-         
+
     Stage 3: Merge chebi dict with our dict
         This stage merges the result of the previous stage with the compound dict we initialised in stage 1. This takes 
         place entirely within (an admittedly complex) dict comprehension. The reason for the chebi dict and our compound
@@ -251,7 +74,7 @@ Stages:
         didn't want to tamper with it too much. A future iteration of this script could have the chebi dict be populated
         in such a manner that it could just be merged directly with our compound dict, without the need for a big dict 
         comprehension and storing a bunch of keys and maps in config.
-    
+
     Stage 4: Multi threaded external API calls
         This is the main change from version 1 of the script. Previously, calls to external API endpoints were made in 
         sequence. With this version of the script, each external API that we hit has a dedicated thread for doing so. 
@@ -259,7 +82,7 @@ Stages:
         ThreadPoolExecutor class here: https://superfastpython.com/threadpoolexecutor-in-python/ ). The RuntimeFlags 
         config object dictates which external API threads will be enabled. If a flag is set to false, we insert an 
         'empty' dict into the results.
-        
+
         The external API's that we currently hit are:
             - KEGG: https://www.kegg.jp/ for pathway information.
             - Wikipathways: https://www.wikipathways.org/ for pathway information.
@@ -267,13 +90,13 @@ Stages:
             - Cactus: https://cactus.nci.nih.gov/chemical/structure for compound structure information.
             - Rhea: https://www.rhea-db.org/ for reactions information.
             - MoNa: https://mona.fiehnlab.ucdavis.edu/ for spectra data.
-        
+
         To add to this list, you will need to implement an API function in ExternalAPIHitter, a wrapper for that API 
         function (more detail on wrappers below), and configure the inputs for that function in the ataronchronon,
          function and add the new wrapper function the list functions to be given to a thread, also in ataronchronon. 
         The actual API endpoint should be held within a config object, like the others, so we have all endpoints in one 
         place for reference. 
-        
+
         In the ataronchronon function, the inputs for each API thread are collected into a tuple ( as ThreadPoolExecutor
         threads to my understanding only take a single input), and those tuples are collected into a list. We also 
         collect each 'wrapper' function into a list , where each 'wrapper' function simply unpacks the tuple of inputs, 
@@ -282,7 +105,7 @@ Stages:
         Using these two lists, we create a list of 'futures' objects where each future is the eventual output of a given
          thread. Each thread returns a standard dict that follows the format {'name': 'spectra', 'results': {...}}. 
          Once each thread has completed, the list of these result dicts is returned.
-    
+
     Stage 5: Sorting results from multi threaded process
         The results from the previous stage are somewhat raw, and need further processing and sorting before being added
         to the compound dict. To this end we have a class called ExternalAPIResultSorter. It takes in the results of the
@@ -292,7 +115,7 @@ Stages:
         out and the relevant field in the dict set to an empty signifier. 'Flags' are also set here, indicating the 
         presence of a type of data. These 'flags' are used in the UI to decide whether to try and render a certain 
         portion of the compound data.
-    
+
     Stage 6: Final odds and ends, and saving the dict to file
         There are some bits of data outstanding from the previous version that I couldn't integrate elsewhere. They are:
             - Processing reactome pathways from the reactome.json file. This is done in a single function called 
@@ -312,18 +135,18 @@ Further Notes:
     Worth checking out the different ExternalAPIHitter methods to see what they do. One, get_ms_from_mona, includes file
     I/O operations. As a result this one method is a significant drag on the multithreaded process. Future versions of 
     this script could do with splitting out this portion entirely.
-    
+
     There are some custom decorators I have written to save writing the same try except blocks over and over. While it
     obscures the root cause a little, you can see for which compound and what method the exception was thrown on. Since 
     we are processing so much data, I decided this level of exception handling was ok.
-    
+
     Some tests would be good, could even have one that built 50 or so real compound directories locally for 
     scrutinisation. Not completed at the time due to other high priority tasks.
-    
+
     The venv for this script must be maintained manually. Any new dependencies will require you to login to codon and
     install the requirements.txt again (obviously make your your new dependency is added to requirements.txt, and 
     transfer that to codon, to allow us to keep track at least somewhat).
-    
+
     If you want to make this script single threaded for whatever reason, you can change the following line:
     `concurrent.futures.ThreadPoolExecutor(max_workers=x)` in ataronchron, and replace whatever the current value of x 
     is to 1.
@@ -332,6 +155,7 @@ Output:
     The script saves the compound and any intermediate data files to the specified output directory.
 
 """
+
 
 def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     """
@@ -349,10 +173,20 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     chebi_id = metabolights_id.replace("MTBLC", "").strip()
 
     # call our java webservice
-    mtblcs = session.get(f'{config.urls.mtbls.metabolights_ws_compounds_url}{metabolights_id}').json()['content']
+    mtblcs = None
+    try:
+        mtblcs = session.get(f'{config.urls.mtbls.metabolights_ws_compounds_url}{metabolights_id}').json()['content']
+    except json.JSONDecodeError as e:
+        print(f'Error getting info from MTBLS webservice for compound {chebi_id}')
+    if mtblcs is None:
+        print(f'Exiting compound building process for compound {chebi_id}')
+        return {}
 
     # init our compound dict, build the chebi dict
+    """"This compound dict is the master copy, and is the one that gets saved at the end, and is passed to various 
+    classes and methods, and is modified in place."""
     compound_dict = _InternalUtils.initialize_compound_dict()
+
     chebi_dict = get_chebi_data(chebi_id, ml_mapping, config, session)
     if not chebi_dict:
         return compound_dict
@@ -1070,63 +904,6 @@ class ExternalAPIResultSorter:
         metabolights_dict['reactions'] = reactions_memento['results']
         metabolights_dict['flags']['hasReactions'] = 'true'
         return metabolights_dict
-
-
-class _FileHandler:
-
-    @staticmethod
-    def save_spectra(spectra_id, spectra_data, mtbls_id, destination) -> None:
-        """
-        Parse a given spectral data file into a dict, and then save it as a .json file using
-        `FileHandler.save_json_file`
-        :param spectra_id: Unique identifier of this spectral data file.
-        :param spectra_data: spectral data file to process.
-        :param mtbls_id: the MTBLC accession associated with this spectral data file.
-        :param destination: The MTBLC directory to save the .json file to.
-        :return: None
-        """
-        final_destination = f'{destination}/{mtbls_id}/{mtbls_id}_spectrum/{spectra_id}/{spectra_id}.json'
-        datapoints = spectra_data.split(" ")
-        ml_spectrum = {"spectrumId": spectra_id, "peaks": []}
-        mz_array = []
-
-        float_round_lambda = lambda num, places, direction: direction(num * (10 ** places)) / float(10 ** places)
-        for datapoint in datapoints:
-            temp_array = datapoint.split(":")
-            temp_peak = {
-                'intensity': float_round_lambda(float(temp_array[1].strip()) * 9.99, 6, math.floor),
-                'mz': float(temp_array[0].strip())
-            }
-            ml_spectrum['peaks'].append(temp_peak)
-            mz_array.append(float(temp_peak['mz']))
-        ml_spectrum.update({'mzStart': min(mz_array), 'mzStop': max(mz_array)})
-        _FileHandler.save_json_file(final_destination, ml_spectrum)
-
-    @staticmethod
-    def save_json_file(filename: str, data: dict) -> None:
-        """
-        Dump a given dict as a .json file. Check first that the directory we want to save to exists, and if it doesn't,
-        create it.
-        :param filename: string representation of the full path of the .json file to be.
-        :param data: dict to be saved as a .json file
-        :return: None
-        """
-        print(f'Attempting to save {filename}')
-        if not os.path.exists(os.path.dirname(filename)):
-            try:
-                os.makedirs(os.path.dirname(filename))
-            except OSError as exc:
-                if exc.errno != errno.EEXIST:
-                    raise
-        with open(filename, "w") as fp:
-            try:
-                json.dump(data, fp)
-            except json.decoder.JSONDecodeError as e:
-                print('what the hell ' + str(e))
-        if os.path.exists(filename):
-            print(f'Successfully saved {filename}')
-        else:
-            print(f'Failed to save {filename}')
 
 
 class _InternalUtils:
