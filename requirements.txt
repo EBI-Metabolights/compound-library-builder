@@ -1,0 +1,6 @@
+requests
+pydantic
+pandas
+retrying
+jinja2
+pytest

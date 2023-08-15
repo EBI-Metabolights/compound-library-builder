@@ -1,0 +1,28 @@
+################################################
+##### MTBLS MAF ChEBI Cross Checker Report #####
+################################################
+{%set rounded_study_result = ((studies_processed / total_studies)*100)|round(2)  %}
+Total Studies Processed: {{ studies_processed }} / {{ total_studies }} {{ rounded_study_result }}%
+{%set rounded_maf_result = ((mafs_processed / total_mafs)*100)|round(2)  %}
+Total MAF Sheets Processed {{ mafs_processed }} / {{ total_mafs }} {{ rounded_maf_result }}%
+
+MAF Sheet Summary
+Total Unique IDs: {{ total_unique_to_mafs }}
+{% set m_pri_per = ((total_unique_maf_primary_ids/total_unique_to_mafs)*100)|round(2) %}
+Of Which Primary {{ total_unique_maf_primary_ids }} ({{m_pri_per}}%)
+{% set m_sec_per =  ((total_unique_maf_secondary_ids/total_unique_to_mafs)*100)|round(2) %}
+Of Which Secondary {{ total_unique_maf_secondary_ids }} ({{m_sec_per}}%)
+{% set i_sec_per = ((total_unique_maf_incorrect/total_unique_to_mafs)*100)|round(2) %}
+Of Which Incorrect {{ total_unique_maf_incorrect }} ({{i_sec_per}}%)
+
+DB Summary
+Total Unique IDs: {{ total_unique_to_db }}
+Of Which Primary {{ total_unique_db_primary_ids }} ({{ (total_unique_db_primary_ids/total_unique_to_db)*100 }}%)
+Of Which Secondary {{ total_unique_db_secondary_ids }} ({{ (total_unique_db_secondary_ids/total_unique_to_db)*100 }}%)
+Of Which Incorrect {{ total_unique_db_incorrect }} ({{ (total_unique_db_incorrect/total_unique_to_db)*100 }}%)
+
+Alternate Identifier Summary
+Coming Sometime
+
+Dud Entry Summary
+Coming Sometime
