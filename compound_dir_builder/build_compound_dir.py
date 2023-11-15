@@ -1,17 +1,15 @@
 import concurrent.futures
-import errno
 import json
 import logging
-import math
-import os
 import xml.etree.ElementTree as ET
 
 from requests import Session
 
-from builder.ancillary_classes.file_handler import _FileHandler
-from builder.builder_wrappers.http_exception_angel import http_exception_angel
-from builder_config_files import CompoundBuilderConfig, CompoundBuilderObjs, CompoundBuilderUrls, RuntimeFlags
-from builder_wrappers.xml_exception_angel import xml_exception_angel
+
+from configs.builder_config_files import CompoundBuilderConfig, CompoundBuilderObjs, RuntimeFlags
+from compound_dir_builder.ancillary_classes.file_handler import _FileHandler
+from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
+from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception_angel
 
 
 ########################################################################################################################
@@ -44,7 +42,7 @@ Parameters:
 
 Stages:
     Stage 1: Initialisation 
-        This stage prepares several objects needed for the builder to run. These are:
+        This stage prepares several objects needed for the compound_dir_builder to run. These are:
             - CompoundBuilderConfig object, which contains all internal & external API endpoints, as well as keys and 
             maps used to translate API responses to our format.
             - Session object for quicker http requests, shared among threads.
@@ -233,7 +231,9 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
 
     # last bits of data that couldn't be integrated anywhere else added here
     compound_dict['pathways']['ReactomePathways'] = get_reactome_data(metabolights_id, reactome_data)
-    compound_dict['spectra']['NMR'] = get_nmr(mtblcs['mc']['metSpectras']) if mtblcs else []
+    compound_dict['spectra']['NMR'] = get_nmr(
+        mtblcs['mc']['metSpectras'] if 'mc' in mtblcs.keys() else []
+    ) if mtblcs else []
 
     # update NMR, species, pathways flags.
     if (len(compound_dict['pathways']['ReactomePathways']) + len(compound_dict['pathways']['KEGGPathways']) +
@@ -541,8 +541,8 @@ class ChebiPopulator:
         :param id: CHeBI compound ID
         :return: Self to enable chain calling.
         """
-        if id in mapping:
-            study_species = mapping['compoundMapping'][id]
+        if f'CHEBI:{id}' in mapping['compound_mapping']:
+            study_species = mapping['compound_mapping'][f'CHEBI:{id}']
             for study_s in study_species:
                 temp_study_species = str(study_s['species']).lower()
                 if temp_study_species not in self.species:
@@ -681,7 +681,8 @@ class ExternalAPIHitter:
         print(
             f"Attempting to get spectral data from MoNa at {f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}'}")
         ml_spectrum = []
-        result = session.get(f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}').json()
+        response = session.get(f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}')
+        result = response.json()
         for spectra in result:
             ml_spectra = {'splash': spectra['splash'], 'type': 'MS', 'name': str(spectra['id']),
                           'url': f'/metabolights/webservice/beta/spectra/{mtbls_id}/{str(spectra["id"])}'}

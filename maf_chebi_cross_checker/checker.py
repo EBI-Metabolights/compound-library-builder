@@ -14,13 +14,14 @@ from compound_common.xml_utils import XmlResponseUtils
 from compound_common.jinja_wrapper import JinjaWrapper
 from configs.ftp_config import FTPConfig
 from maf_chebi_cross_checker.checker_dataclasses import OverviewMetrics, IDWatchdog, IDRegistry
+from function_wrappers.checker_wrappers.file_write_exception_angel import file_write_exception_angel
 
 
 class Checker:
 
     def __init__(
             self, session: requests.Session, handler: EBIFTPHandler, token: str,
-            jinja_wrapper: JinjaWrapper = JinjaWrapper(),
+            jinja_wrapper: JinjaWrapper = JinjaWrapper(), output_location: str = './outputs/',
             ):
         """
         Init method
@@ -44,8 +45,7 @@ class Checker:
         self.duds = ['|', 'unknown', 'Unknown', '-', ' ']
         self.debug = True
         self.limit = 10
-        self.output_location='/Users/cmartin/Projects/reports/maf_chebi_cross_checker/'
-
+        self.output_location = output_location
         # maybe wanna make a little chebi webservice wrapper or something
         self.chebi_complete_entity_url = 'http://www.ebi.ac.uk/webservices/chebi/2.0/test/getCompleteEntity?chebiId='
 
@@ -240,7 +240,7 @@ class Checker:
             if dud in identifier:
                 return True
 
-
+    @file_write_exception_angel
     def save_report(self, maf_registry: IDRegistry, db_registry: IDRegistry, overview: OverviewMetrics,) -> None:
         """
         Save a report with metrics from the run of Checker.go
@@ -264,9 +264,11 @@ class Checker:
             'total_unique_db_incorrect': len(db_registry.incorrect)
         }
         rendered_report = self.j.template.render(jinja_vars)
+
         with open(f'{self.output_location}report.txt', 'w') as report_file:
             report_file.write(rendered_report)
 
+    @file_write_exception_angel
     def save_primary_maf_ids(self, registry: IDRegistry, name: str) -> None:
         """
         Write a bunch of primary IDs to text file for later use.

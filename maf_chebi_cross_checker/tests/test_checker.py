@@ -3,7 +3,7 @@ from unittest.mock import patch, mock_open, MagicMock
 
 import pytest
 
-from common.xml_utils import XmlResponseUtils
+from compound_common.xml_utils import XmlResponseUtils
 from fixtures import checker_fixture, good_dataframe, chebi_complete_entity, registry, overview, compound_ids, \
     study_file_endpoint_fixture
 from maf_chebi_cross_checker.checker_dataclasses import OverviewMetrics

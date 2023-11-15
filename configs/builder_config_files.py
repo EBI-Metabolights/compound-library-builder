@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class RuntimeFlags(BaseModel):
-    spectra: bool = False
+    spectra: bool = True
     citations: bool = True
     wikipathways: bool = True
     kegg: bool = True
@@ -22,7 +22,7 @@ class RuntimeFlags(BaseModel):
 
 class CompoundBuilderObjs(BaseModel):
     """
-    A collection of various keys and mappings that the builder refers to. Previously these were scattered global
+    A collection of various keys and mappings that the compound_dir_builder refers to. Previously these were scattered global
     variables, or defined in-method. Hopefully collecting them all here will make understanding this script easier than
      understanding v1. If these various objects don't make sense in isolation, follow the script flow and they might
      make some more sense. Also, view a MTBLS1234.json file and that also might shed some light.
@@ -44,7 +44,7 @@ class CompoundBuilderObjs(BaseModel):
         'Species': 'species'
     }
 
-    chebi_citation_keys = ['source', 'type', 'value']
+    chebi_citation_keys: list = ['source', 'type', 'value']
     chebi_citation_keys_map: dict = {'source': 'source', 'type': 'type', 'value': 'data'}
     epmc_citation_keys_map: dict = {
         'title': 'title',
@@ -102,9 +102,9 @@ class CompoundBuilderObjs(BaseModel):
 
 
 class MtblsWsUrls(BaseModel):
-    metabolights_ws_url: str = "http://www.ebi.ac.uk/metabolights/webservice/"
-    metabolights_ws_study_url: str = f'{metabolights_ws_url}study/'
-    metabolights_ws_studies_list: str = f'{metabolights_ws_study_url}study/list'
+    metabolights_ws_url: str = "http://www.ebi.ac.uk/metabolights/ws/"
+    metabolights_ws_study_url: str = f'{metabolights_ws_url}studies/public/study'
+    metabolights_ws_studies_list: str = f'{metabolights_ws_url}studies'
     metabolights_ws_compounds_url: str = f'{metabolights_ws_url}compounds/'
     metabolights_ws_compounds_list: str = f'{metabolights_ws_compounds_url}list'
 
@@ -118,7 +118,7 @@ class KeggUrls(BaseModel):
 class MiscUrls(BaseModel):
     chebi_api: str = "https://www.ebi.ac.uk/webservices/chebi/2.0/test/getCompleteEntity?chebiId="
     cts_api: str = "http://cts.fiehnlab.ucdavis.edu/service/compound/"
-    cactus_api = "https://cactus.nci.nih.gov/chemical/structure/"
+    cactus_api: str = "https://cactus.nci.nih.gov/chemical/structure/"
     epmc_api: str = "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query="
     reactome_url: str = "http://www.reactome.org/download/current/ChEBI2Reactome.txt"
     rhea_api: str = "https://www.rhea-db.org/rhea/"

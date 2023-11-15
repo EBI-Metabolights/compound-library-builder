@@ -1,0 +1,28 @@
+################################################
+##### MTBLS MAF ChEBI Cross Checker Report #####
+################################################
+
+Total Studies Processed: 11 / 1329 0.83%
+
+Total MAF Sheets Processed 10 / 10 100.0%
+
+MAF Sheet Summary
+Total Unique IDs: 173
+
+Of Which Primary 173 (100.0%)
+
+Of Which Secondary 0 (0.0%)
+
+Of Which Incorrect 0 (0.0%)
+
+DB Summary
+Total Unique IDs: 27237
+Of Which Primary 27152 (99.68792451444726%)
+Of Which Secondary 85 (0.31207548555274073%)
+Of Which Incorrect 0 (0.0%)
+
+Alternate Identifier Summary
+Coming Sometime
+
+Dud Entry Summary
+Coming Sometime
