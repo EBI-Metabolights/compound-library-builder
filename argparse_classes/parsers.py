@@ -4,9 +4,16 @@ from argparse_classes.actions.readable_dir import ReadableDir
 
 
 class ArgParsers:
+    """
+    Collection of argparsers
+    """
 
     @staticmethod
     def compound_builder_parser() -> argparse.ArgumentParser:
+        """
+        Compound builder arg parser.
+        :return: ArgumentParser object, initialised.
+        """
         cal_default_dest = '/Users/cmartin/projects/fake_compound_dir/'
         cal_ftp = '/Users/cmartin/Projects/compound-directory-builder/ephemeral'
 

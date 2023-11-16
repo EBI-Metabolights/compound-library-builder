@@ -4,9 +4,16 @@ import logging
 from functools import wraps
 from requests.exceptions import SSLError, ConnectionError, HTTPError, Timeout
 
-# wrote a decorator to catch common http request exceptions
 
 def http_exception_angel(func):
+    """
+    A function wrapper to catch and log common http request exceptions. To be used only where it is not crucial for the
+    method to fail gracefully - you will get a readout, a stacktrace in the event of connection error, but python will
+    not stop. The wrapper is intended to save lines where previously there were identical try except blocks - again, use
+    this wisely and sparingly.
+    :param func: Function to wrap.
+    :return: Results of function, or failing that, nothing, but log out the error.
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:

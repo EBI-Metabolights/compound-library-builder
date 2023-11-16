@@ -1,10 +1,15 @@
 from functools import wraps
 
-#from compound_dir_builder.start_compound_builder import stats
 from shared_resources import stats
 
 
 def compound_debug_harness(enabled=False):
+    """
+    Function wrapper to capture the results of builder_compound_dir.build, and update various debug statistics, and then
+    return the results.
+    :param enabled: Whether the debug mode is actually enabled. If not, just return the function execution.
+    :return: decorator
+    """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

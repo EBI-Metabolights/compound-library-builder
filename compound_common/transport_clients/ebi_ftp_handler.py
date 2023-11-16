@@ -24,19 +24,8 @@ class EBIFTPHandler:
         files = self.ftp.nlst()
         return [file for file in files if file.startswith('a_') and file.endswith('.txt')]
 
-    def load_maf_file(self, maf_file,  study: str) -> pd.DataFrame:
-        """this method and download-maf are like for like duplciates, if this works, consolidate them"""
-        df = None
 
-        self.ftp.cwd(f'{self.config.study}{study}/')
-        buffer = self.download_maf(maf_file=maf_file, buffer=io.BytesIO())
-        try:
-            df = pd.read_csv(buffer, sep='\t')
-        except UnicodeDecodeError as e:
-            print(f'{study} maf sheet {maf_file} all out of whack')
-        return df
-
-    def load_assay_file(self, assay_file: str, study: str) -> pd.DataFrame:
+    def load_isa_file(self, isatab_file: str, study: str) -> pd.DataFrame:
         """
 
         :param assay_file:
@@ -46,22 +35,22 @@ class EBIFTPHandler:
         # this shouldn't ever be out of step but just to be safe
         self.ftp.cwd(f'{self.config.study}{study}/')
 
-        buffer = self.download_assay(assay_file=assay_file, buffer=io.BytesIO())
+        buffer = self.download_file(assay_file=isatab_file, buffer=io.BytesIO())
         # i am a beautiful genius
         try:
             df = pd.read_csv(buffer, sep='\t')
         except UnicodeDecodeError as e:
-            print(f'{study} assay sheet {assay_file} all out of whack')
+            print(f'{study} isatab file {isatab_file} not able to be decoded.')
         return df
 
     @retry(stop_max_attempt_number=3, wait_fixed=5000)
-    def download_assay(self, assay_file, buffer):
+    def download_file(self, assay_file, buffer):
+        """
+        Download a given assay file from ftp. Uses @retry wrapper to retry download three times.
+        :param assay_file: Given assay file.
+        :param buffer: io.BytesIO buffer object to write to.
+        :return: written buffer object (if successful)
+        """
         self.ftp.retrbinary(f'RETR {assay_file}', buffer.write)
-        buffer.seek(0)
-        return buffer
-
-    @retry(stop_max_attempt_number=3, wait_fixed=5000)
-    def download_maf(self, maf_file, buffer):
-        self.ftp.retrbinary(f'RETR {maf_file}', buffer.write)
         buffer.seek(0)
         return buffer

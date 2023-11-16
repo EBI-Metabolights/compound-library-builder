@@ -2,6 +2,9 @@ from typing import List
 
 
 class ListUtils:
+    """
+    Collection of list operation methods
+    """
 
     @staticmethod
     def get_lol(master_list: List[str], count: int) -> List[List[str]]:
@@ -21,4 +24,10 @@ class ListUtils:
 
     @staticmethod
     def get_delta(webservice_list: List[str], filesystem_list: List[str]) -> List[str]:
+        """
+        Return IDs that are found only in the webservice list.
+        :param webservice_list: List of MTBLC ids from the webservice.
+        :param filesystem_list: List of MTBLC ids from filesystem.
+        :return: List of ids found only in webservice
+        """
         return list(set(webservice_list) - set(filesystem_list))

@@ -9,9 +9,9 @@ import requests
 import pandas as pd
 
 
-from compound_common.ebi_ftp_handler import EBIFTPHandler
-from compound_common.xml_utils import XmlResponseUtils
-from compound_common.jinja_wrapper import JinjaWrapper
+from compound_common.transport_clients.ebi_ftp_handler import EBIFTPHandler
+from compound_common.doc_clients.xml_utils import XmlResponseUtils
+from compound_common.doc_clients.jinja_wrapper import JinjaWrapper
 from configs.ftp_config import FTPConfig
 from maf_chebi_cross_checker.checker_dataclasses import OverviewMetrics, IDWatchdog, IDRegistry
 from function_wrappers.checker_wrappers.file_write_exception_angel import file_write_exception_angel
@@ -178,7 +178,7 @@ class Checker:
         :param study: Study accession number.
         :return: MAF sheet as a pandas dataframe
         """
-        maf_dataframe = self.handler.load_maf_file(maf_file=maf, study=study)
+        maf_dataframe = self.handler.load_isa_file(isatab_file=maf, study=study)
         return maf_dataframe
 
     def process_maf(self, maf_dataframe: pd.DataFrame) -> None:

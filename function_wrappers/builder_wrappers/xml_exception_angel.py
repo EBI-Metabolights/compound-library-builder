@@ -4,6 +4,12 @@ import xml.etree.ElementTree as ET
 
 
 def xml_exception_angel(func):
+    """
+    Function wrapper to swallow and report XML .find exceptions. Use sparingly, where it is not important for the method
+    to fail gracefully.
+    :param func: Function to wrap.
+    :return:
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
