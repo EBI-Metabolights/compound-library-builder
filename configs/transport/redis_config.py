@@ -11,6 +11,7 @@ class RedisConfig(BaseModel):
     db: int
     decode_responses: bool
     password: Optional[str] = ''
+    debug: Optional[bool] = False
 
 
 class CompoundBuilderRedisConfig(BaseModel):

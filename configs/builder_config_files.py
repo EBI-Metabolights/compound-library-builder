@@ -123,7 +123,6 @@ class MiscUrls(BaseModel):
     reactome_url: str = "http://www.reactome.org/download/current/ChEBI2Reactome.txt"
     rhea_api: str = "https://www.rhea-db.org/rhea/"
     wikipathways_api: str = "https://webservice.wikipathways.org/findPathwaysByXref?ids="
-    mona_api: str = "http://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=compound.metaData=q=%27name==\%22InChIKey\%22%20and%20value==\%22"
     new_mona_api: str = "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
 
 

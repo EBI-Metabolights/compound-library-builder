@@ -20,7 +20,8 @@ class RedisClient:
             host=config.host, port=config.port, db=config.db, decode_responses=config.decode_responses,
             password=config.password
         )
-        print(self.check_queue_exists('compounds'))
+        if config.debug:
+            print(self.check_queue_exists('compounds'))
 
     def push_to_queue(self, queue_name, payload: Any) -> Union[Any, None]:
         """

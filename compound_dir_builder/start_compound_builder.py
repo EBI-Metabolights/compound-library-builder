@@ -6,6 +6,7 @@ import yaml
 import build_compound_dir
 from argparse_classes.parsers import ArgParsers
 from compound_common.timer import Timer
+from compound_common.transport_clients.redis_client import RedisClient
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import CompoundRedisQueueManager
 from configs.transport.redis_config import RedisConfig
 from function_wrappers.builder_wrappers.debug_harness import compound_debug_harness
@@ -29,7 +30,7 @@ def main(args):
     redis_config = RedisConfig(**yaml_data)
 
     mpm = MappingPersistenceManager(root=ftp, timers_enabled=False)
-    crqm = CompoundRedisQueueManager(config=redis_config, session=requests.Session())
+    crqm = CompoundRedisQueueManager(config=redis_config, session=requests.Session(), redis_client=RedisClient(config=redis_config))
 
     ml_mapping = mpm.msgpack.load('mapping')
     reactome_data = mpm.vanilla.load('reactome')

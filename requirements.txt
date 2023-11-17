@@ -4,3 +4,5 @@ pandas
 retrying
 jinja2
 pytest
+redis
+PyYAML

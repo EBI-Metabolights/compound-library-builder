@@ -6,10 +6,12 @@ import pytest
 from compound_common.doc_clients.xml_utils import XmlResponseUtils
 from maf_chebi_cross_checker.checker_dataclasses import OverviewMetrics
 
+from tests.maf_chebi_cross_checker_tests.fixtures import checker_fixture,chebi_complete_entity, study_file_endpoint_fixture, good_dataframe, compound_ids, registry, overview
+
 
 class TestChecker:
     """
-    All whatever_fixture seen in test function arguments can be found in maf_chebi_cross_checker/tests/fixtures.py
+    All whatever_fixture seen in test function arguments can be found in maf_chebi_cross_checker_tests/tests/fixtures.py
     """
 
     def test_go_bad_maf(self, checker_fixture, study_file_endpoint_fixture, good_dataframe):
