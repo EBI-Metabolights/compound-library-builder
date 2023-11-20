@@ -20,9 +20,13 @@ class CompoundRedisQueueManager:
     """
 
     def __init__(
-            self, config: RedisConfig = None, session: requests.Session = None, redis_client: RedisClient = None,
-            mtbls_ws_config: MtblsWsUrls = MtblsWsUrls(),
-            compound_builder_redis_config: CompoundBuilderRedisConfig = CompoundBuilderRedisConfig()):
+        self,
+        config: RedisConfig = None,
+        session: requests.Session = None,
+        redis_client: RedisClient = None,
+        mtbls_ws_config: MtblsWsUrls = MtblsWsUrls(),
+        compound_builder_redis_config: CompoundBuilderRedisConfig = CompoundBuilderRedisConfig(),
+    ):
         self.redis_client = redis_client
         self.mtbls_ws_config = mtbls_ws_config
         self.cbrc = compound_builder_redis_config
@@ -35,8 +39,8 @@ class CompoundRedisQueueManager:
         giving those chunks to the _push_compound_ids_to_redis method.
         :return: None
         """
-        if self.redis_client.check_queue_exists('compounds')['items'] > 0:
-            print('Queue populated. Risk of duplication. Aborting.')
+        if self.redis_client.check_queue_exists("compounds")["items"] > 0:
+            print("Queue populated. Risk of duplication. Aborting.")
             return
         compounds = self.get_compounds_ids()
         chunked = ListUtils.get_lol(compounds, self.cbrc.chunk_size)
@@ -50,12 +54,12 @@ class CompoundRedisQueueManager:
         """
         sublist_index, success = 0, 0
         for l in chunked_compound_lists:
-            resp = self.redis_client.push_to_queue('compounds', json.dumps(l))
+            resp = self.redis_client.push_to_queue("compounds", json.dumps(l))
             if resp is not None:
                 success += 1
-                print(f'Pushed sublist {sublist_index} to queue')
+                print(f"Pushed sublist {sublist_index} to queue")
             else:
-                print(f'Unable to push sublist {sublist_index} to compound queue')
+                print(f"Unable to push sublist {sublist_index} to compound queue")
             sublist_index += 1
 
     @http_exception_angel
@@ -65,9 +69,11 @@ class CompoundRedisQueueManager:
         :return: List of compound ids retrieved from the webservice.
         """
         response = self.session.get(self.mtbls_ws_config.metabolights_ws_compounds_list)
-        compounds = response.json()['content']
+        compounds = response.json()["content"]
         if self.cbrc.new_compounds_only:
-            compounds = ListUtils.get_delta(compounds, DirUtils.get_mtblc_ids_from_directory(mtblc_dir))
+            compounds = ListUtils.get_delta(
+                compounds, DirUtils.get_mtblc_ids_from_directory(mtblc_dir)
+            )
         return compounds
 
     def consume_queue(self) -> List[str]:
@@ -76,18 +82,24 @@ class CompoundRedisQueueManager:
         evaluate back as a proper List.
         :return: List of compound ids.
         """
-        compound_chunk = self.redis_client.consume_queue('compounds')
+        compound_chunk = self.redis_client.consume_queue("compounds")
         return ast.literal_eval(compound_chunk)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', help="Absolute path to redis config.yaml file", default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml")
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Absolute path to redis config.yaml file",
+        default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+    )
     args = parser.parse_args(sys.argv[1:])
-    with open(f'{args.config}', 'r') as f:
+    with open(f"{args.config}", "r") as f:
         yaml_data = yaml.safe_load(f)
     config = RedisConfig(**yaml_data)
     CompoundRedisQueueManager(
-        config=config, session=requests.Session(), redis_client=RedisClient(
-            config=config)
-    )#.go()
+        config=config,
+        session=requests.Session(),
+        redis_client=RedisClient(config=config),
+    )  # .go()

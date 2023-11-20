@@ -25,20 +25,24 @@ class XmlResponseUtils:
         """
         chebi_ns_map: dict = {
             "envelop": "http://schemas.xmlsoap.org/soap/envelope/",
-            "chebi": "{http://www.ebi.ac.uk/webservices/chebi}"
+            "chebi": "{http://www.ebi.ac.uk/webservices/chebi}",
         }
         id = None
         try:
-            root = ET.fromstring(response_text) \
-            .find("envelop:Body", namespaces=chebi_ns_map) \
-            .find("{https://www.ebi.ac.uk/webservices/chebi}getCompleteEntityResponse") \
-            .find("{https://www.ebi.ac.uk/webservices/chebi}return")
+            root = (
+                ET.fromstring(response_text)
+                .find("envelop:Body", namespaces=chebi_ns_map)
+                .find(
+                    "{https://www.ebi.ac.uk/webservices/chebi}getCompleteEntityResponse"
+                )
+                .find("{https://www.ebi.ac.uk/webservices/chebi}return")
+            )
 
             id = root.find("{https://www.ebi.ac.uk/webservices/chebi}chebiId").text
         except ET.ParseError as e:
-            print(f'XML parsing error occurred: {str(e)}')
+            print(f"XML parsing error occurred: {str(e)}")
         except AttributeError as e:
-            print(f'Attribute error while calling .find on xml document: {str(e)}')
+            print(f"Attribute error while calling .find on xml document: {str(e)}")
         return id
 
     @staticmethod

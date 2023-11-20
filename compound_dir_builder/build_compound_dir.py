@@ -6,7 +6,11 @@ import xml.etree.ElementTree as ET
 from requests import Session
 
 
-from configs.builder_config_files import CompoundBuilderConfig, CompoundBuilderObjs, RuntimeFlags
+from configs.builder_config_files import (
+    CompoundBuilderConfig,
+    CompoundBuilderObjs,
+    RuntimeFlags,
+)
 from compound_dir_builder.ancillary_classes.file_handler import _FileHandler
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception_angel
@@ -173,11 +177,13 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     # call our java webservice
     mtblcs = None
     try:
-        mtblcs = session.get(f'{config.urls.mtbls.metabolights_ws_compounds_url}{metabolights_id}').json()['content']
+        mtblcs = session.get(
+            f"{config.urls.mtbls.metabolights_ws_compounds_url}{metabolights_id}"
+        ).json()["content"]
     except json.JSONDecodeError as e:
-        print(f'Error getting info from MTBLS webservice for compound {chebi_id}')
+        print(f"Error getting info from MTBLS webservice for compound {chebi_id}")
     if mtblcs is None:
-        print(f'Exiting compound building process for compound {chebi_id}')
+        print(f"Exiting compound building process for compound {chebi_id}")
         return {}
 
     # init our compound dict, build the chebi dict
@@ -188,9 +194,9 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     chebi_dict = get_chebi_data(chebi_id, ml_mapping, config, session)
     if not chebi_dict:
         return compound_dict
-    chebi_dict['id'] = chebi_id
+    chebi_dict["id"] = chebi_id
     # do some updating
-    compound_dict['id'] = metabolights_id
+    compound_dict["id"] = metabolights_id
 
     # perform the gnarliest dict comprehension anyone has ever seen
     # essentially just copies values from the chebi compound dict to the mtbl dict, referring to
@@ -200,61 +206,87 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     compound_dict.update(
         {
             key: chebi_dict.get(
-                value, 'NA'
+                value,
+                "NA"
                 if key not in config.objs.ml_compound_absent_value_type_map
-                else config.objs.ml_compound_absent_value_type_map[key]
+                else config.objs.ml_compound_absent_value_type_map[key],
             )
             if chebi_dict.get(value) is not None
-            else (print(f"{value} not assigned"), 'NA'
-            if key not in config.objs.ml_compound_absent_value_type_map
-            else config.objs.ml_compound_absent_value_type_map[key])[1]
+            else (
+                print(f"{value} not assigned"),
+                "NA"
+                if key not in config.objs.ml_compound_absent_value_type_map
+                else config.objs.ml_compound_absent_value_type_map[key],
+            )[1]
             for key, value in config.objs.ml_compound_chebi_compound_map.items()
         }
     )
 
     # initialise the pathways dicts and the spectra lists
-    compound_dict.update({
-        'pathways': {'WikiPathways': {}, 'KEGGPathways': {}, 'ReactomePathways': {}},
-        'spectra': {'NMR': [], 'MS': []}
-    })
+    compound_dict.update(
+        {
+            "pathways": {
+                "WikiPathways": {},
+                "KEGGPathways": {},
+                "ReactomePathways": {},
+            },
+            "spectra": {"NMR": [], "MS": []},
+        }
+    )
 
     mementos = ataronchronon(
         chebi_compound_dict=chebi_dict,
         config=config,
         session=session,
         mtbls_id=metabolights_id,
-        data_directory=data_directory
+        data_directory=data_directory,
     )
 
     apocrypha = ExternalAPIResultSorter(mementos)
     compound_dict = apocrypha.sort(compound_dict)
 
     # last bits of data that couldn't be integrated anywhere else added here
-    compound_dict['pathways']['ReactomePathways'] = get_reactome_data(metabolights_id, reactome_data)
-    compound_dict['spectra']['NMR'] = get_nmr(
-        mtblcs['mc']['metSpectras'] if 'mc' in mtblcs.keys() else []
-    ) if mtblcs else []
+    compound_dict["pathways"]["ReactomePathways"] = get_reactome_data(
+        metabolights_id, reactome_data
+    )
+    compound_dict["spectra"]["NMR"] = (
+        get_nmr(mtblcs["mc"]["metSpectras"] if "mc" in mtblcs.keys() else [])
+        if mtblcs
+        else []
+    )
 
     # update NMR, species, pathways flags.
-    if (len(compound_dict['pathways']['ReactomePathways']) + len(compound_dict['pathways']['KEGGPathways']) +
-        len(compound_dict['pathways']['WikiPathways'])) > 0:
-        compound_dict['flags']['hasPathways'] = 'true'
-    if len(compound_dict['spectra']['NMR']) > 0:
-        compound_dict['flags']['hasNMR'] = 'true'
-    if compound_dict['species']:
-        compound_dict['flags']['hasSpecies'] = 'true'
+    if (
+        len(compound_dict["pathways"]["ReactomePathways"])
+        + len(compound_dict["pathways"]["KEGGPathways"])
+        + len(compound_dict["pathways"]["WikiPathways"])
+    ) > 0:
+        compound_dict["flags"]["hasPathways"] = "true"
+    if len(compound_dict["spectra"]["NMR"]) > 0:
+        compound_dict["flags"]["hasNMR"] = "true"
+    if compound_dict["species"]:
+        compound_dict["flags"]["hasSpecies"] = "true"
 
     if config.rt_flags.verbose_logging:
-        print(f'___________________________ataronchoron results for {metabolights_id}_____________')
+        print(
+            f"___________________________ataronchoron results for {metabolights_id}_____________"
+        )
         for d in mementos:
             print(d.values())
 
-    _FileHandler.save_json_file(f'{data_directory}/{metabolights_id}/{metabolights_id}_data.json', compound_dict)
+    _FileHandler.save_json_file(
+        f"{data_directory}/{metabolights_id}/{metabolights_id}_data.json", compound_dict
+    )
     return compound_dict
 
 
-def ataronchronon(chebi_compound_dict: dict, config: CompoundBuilderConfig, session: Session, mtbls_id: str,
-                  data_directory: str):
+def ataronchronon(
+    chebi_compound_dict: dict,
+    config: CompoundBuilderConfig,
+    session: Session,
+    mtbls_id: str,
+    data_directory: str,
+):
     """
     Configure a ThreadPoolExecutor, and instruct each thread to execute a different external API related task.
     The threads for each task will only start if the corresponding flag is enabled. The RuntimeFlags object starts
@@ -269,37 +301,72 @@ def ataronchronon(chebi_compound_dict: dict, config: CompoundBuilderConfig, sess
     """
     # collect the inputs for each method wrapper wrapper into a tuple. We do this as threadpool executors can only take
     # one argument.
-    citation_input = (chebi_compound_dict['Citations'], config, session)
-    cactus_input = (config.urls.misc_urls.cactus_api, chebi_compound_dict['inchiKey'], session)
-    reactions_input = (chebi_compound_dict, config.urls.misc_urls.rhea_api, config.objs, session)
-    ms_from_mona_input = (mtbls_id, data_directory, chebi_compound_dict['inchiKey'], config, session)
-    wiki_pathways_input = (chebi_compound_dict['inchiKey'], config, session)
+    citation_input = (chebi_compound_dict["Citations"], config, session)
+    cactus_input = (
+        config.urls.misc_urls.cactus_api,
+        chebi_compound_dict["inchiKey"],
+        session,
+    )
+    reactions_input = (
+        chebi_compound_dict,
+        config.urls.misc_urls.rhea_api,
+        config.objs,
+        session,
+    )
+    ms_from_mona_input = (
+        mtbls_id,
+        data_directory,
+        chebi_compound_dict["inchiKey"],
+        config,
+        session,
+    )
+    wiki_pathways_input = (chebi_compound_dict["inchiKey"], config, session)
     kegg_pathways_input = (chebi_compound_dict, config, session)
 
     input_list = [
-        citation_input, cactus_input, reactions_input, ms_from_mona_input, wiki_pathways_input, kegg_pathways_input
+        citation_input,
+        cactus_input,
+        reactions_input,
+        ms_from_mona_input,
+        wiki_pathways_input,
+        kegg_pathways_input,
     ]
-    method_list = [ExternalAPIHitter.citation_wrapper, ExternalAPIHitter.cactus_wrapper,
-                   ExternalAPIHitter.reactions_wrapper, ExternalAPIHitter.ms_from_mona_wrapper,
-                   ExternalAPIHitter.wikipathways_wrapper, ExternalAPIHitter.kegg_wrapper]
+    method_list = [
+        ExternalAPIHitter.citation_wrapper,
+        ExternalAPIHitter.cactus_wrapper,
+        ExternalAPIHitter.reactions_wrapper,
+        ExternalAPIHitter.ms_from_mona_wrapper,
+        ExternalAPIHitter.wikipathways_wrapper,
+        ExternalAPIHitter.kegg_wrapper,
+    ]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ur_executor:
         # create a list of empty result dicts to make processing easier later
         the_duds = [
-            {'name': config.rt_flags.mapping[_InternalUtils.extract_name_from_function(method)], 'results': None}
+            {
+                "name": config.rt_flags.mapping[
+                    _InternalUtils.extract_name_from_function(method)
+                ],
+                "results": None,
+            }
             for method in method_list
             if _InternalUtils.flag_is_enabled(config.rt_flags, method) is False
         ]
 
         # create a list of futures object, where each future is a thread corresponding to an enabled runtime flag.
         the_futures = [
-            ur_executor.submit(method, args) for method, args in zip(method_list, input_list)
+            ur_executor.submit(method, args)
+            for method, args in zip(method_list, input_list)
             if _InternalUtils.flag_is_enabled(config.rt_flags, method)
         ]
 
         # wait for and collect the results of each individual thread
-        the_results = [future.result() for future
-                       in concurrent.futures.as_completed(the_futures, config.rt_flags.timeout)]
+        the_results = [
+            future.result()
+            for future in concurrent.futures.as_completed(
+                the_futures, config.rt_flags.timeout
+            )
+        ]
 
         # add the duds to the results
         the_results.extend(the_duds)
@@ -324,11 +391,13 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
     """
     """This request needs to be made first, as the rest of the other API calls depend on it's response."""
 
-    chebi_response = session.get(f'{config.urls.misc_urls.chebi_api}{id}').content
-    root = ET.fromstring(chebi_response) \
-        .find("envelop:Body", namespaces=config.objs.chebi_ns_map) \
-        .find("{https://www.ebi.ac.uk/webservices/chebi}getCompleteEntityResponse") \
+    chebi_response = session.get(f"{config.urls.misc_urls.chebi_api}{id}").content
+    root = (
+        ET.fromstring(chebi_response)
+        .find("envelop:Body", namespaces=config.objs.chebi_ns_map)
+        .find("{https://www.ebi.ac.uk/webservices/chebi}getCompleteEntityResponse")
         .find("{https://www.ebi.ac.uk/webservices/chebi}return")
+    )
 
     # log out the ID so we know it's a valid 'un
     _InternalUtils.gimme_line()
@@ -336,21 +405,15 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
 
     # generate the 'basic' dict.
     chebi_basic_dict = {
-        key: _InternalUtils.get_val(root, key)
-        for key in config.objs.chebi_basic_keys
+        key: _InternalUtils.get_val(root, key) for key in config.objs.chebi_basic_keys
     }
-    chebi_basic_dict['id'] = id
+    chebi_basic_dict["id"] = id
 
     # init the ChebiPopulator class, and chain call its methods
     chebi_advanced_populator = ChebiPopulator(root, config)
-    chebi_advanced_populator \
-        .get_synonyms() \
-        .get_iupac_names() \
-        .get_formulae() \
-        .get_citations() \
-        .get_database_links() \
-        .get_species_via_compound_origins() \
-        .get_species_via_compound_mapping(ml_mapping, chebi_basic_dict['id'])
+    chebi_advanced_populator.get_synonyms().get_iupac_names().get_formulae().get_citations().get_database_links().get_species_via_compound_origins().get_species_via_compound_mapping(
+        ml_mapping, chebi_basic_dict["id"]
+    )
 
     chebi_advanced_dict = {
         key: chebi_advanced_populator.__getattribute__(value)
@@ -369,19 +432,24 @@ def get_reactome_data(mtblc_compound_id: str, reactome_data: dict) -> dict:
     :param reactome_data: Reactome data as a dict.
     :return: Reactome pathways for this compound, as a dict.
     """
-    temp_reactome_pathways = reactome_data[mtblc_compound_id] if mtblc_compound_id in reactome_data else []
+    temp_reactome_pathways = (
+        reactome_data[mtblc_compound_id] if mtblc_compound_id in reactome_data else []
+    )
     reactome_pathways = {}
     try:
         for pathway in temp_reactome_pathways:
-            temp_pathway = {'name': pathway['pathway'], 'pathwayId': pathway['pathwayId'],
-                            'url': pathway['reactomeUrl'],
-                            'reactomeId': pathway['reactomeId']}
-            if pathway['species'] not in reactome_pathways:
-                reactome_pathways[pathway['species']] = [temp_pathway]
+            temp_pathway = {
+                "name": pathway["pathway"],
+                "pathwayId": pathway["pathwayId"],
+                "url": pathway["reactomeUrl"],
+                "reactomeId": pathway["reactomeId"],
+            }
+            if pathway["species"] not in reactome_pathways:
+                reactome_pathways[pathway["species"]] = [temp_pathway]
             else:
-                reactome_pathways[pathway['species']].append(temp_pathway)
+                reactome_pathways[pathway["species"]].append(temp_pathway)
     except KeyError as e:
-        print(f'Error populating dict for {mtblc_compound_id}: {str(e)}')
+        print(f"Error populating dict for {mtblc_compound_id}: {str(e)}")
     finally:
         return reactome_pathways
 
@@ -397,14 +465,21 @@ def get_nmr(spectra) -> list:
     for spec in spectra:
         try:
             if spec["spectraType"] == "NMR":
-                temp_spec = {'name': spec['name'], 'id': str(spec['id']),
-                             'url': f"http://www.ebi.ac.uk/metabolights/webservice/compounds/spectra/{str(spec['id'])}/json",
-                             'path': spec['pathToJsonSpectra'], 'type': spec['spectraType'],
-                             'attributes': [
-                                 {'attributeName': attr['attributeDefinition']['name'],
-                                  'attributeDescription': attr['attributeDefinition']['name'],
-                                  'attributeValue': attr['value']} for attr in spec['attributes']
-                             ]}
+                temp_spec = {
+                    "name": spec["name"],
+                    "id": str(spec["id"]),
+                    "url": f"http://www.ebi.ac.uk/metabolights/webservice/compounds/spectra/{str(spec['id'])}/json",
+                    "path": spec["pathToJsonSpectra"],
+                    "type": spec["spectraType"],
+                    "attributes": [
+                        {
+                            "attributeName": attr["attributeDefinition"]["name"],
+                            "attributeDescription": attr["attributeDefinition"]["name"],
+                            "attributeValue": attr["value"],
+                        }
+                        for attr in spec["attributes"]
+                    ],
+                }
                 nmr.append(temp_spec)
         except KeyError as e:
             print(f'Error populating dict for {spec["id"]}: {str(e)}')
@@ -413,7 +488,6 @@ def get_nmr(spectra) -> list:
 
 
 class ChebiPopulator:
-
     def __init__(self, root, config: CompoundBuilderConfig):
         self.root = root
         self.config = config
@@ -434,8 +508,12 @@ class ChebiPopulator:
 
         :return: Self to enable chain calling.
         """
-        for synonym in self.root.findall("{https://www.ebi.ac.uk/webservices/chebi}Synonyms"):
-            self.synonyms.append(synonym.find("{https://www.ebi.ac.uk/webservices/chebi}data").text)
+        for synonym in self.root.findall(
+            "{https://www.ebi.ac.uk/webservices/chebi}Synonyms"
+        ):
+            self.synonyms.append(
+                synonym.find("{https://www.ebi.ac.uk/webservices/chebi}data").text
+            )
         return self
 
     @xml_exception_angel
@@ -446,8 +524,12 @@ class ChebiPopulator:
 
         :return: Self to enable chain calling.
         """
-        for iupac_name in self.root.findall("{https://www.ebi.ac.uk/webservices/chebi}IupacNames"):
-            self.iupac_names.append(iupac_name.find("{https://www.ebi.ac.uk/webservices/chebi}data").text)
+        for iupac_name in self.root.findall(
+            "{https://www.ebi.ac.uk/webservices/chebi}IupacNames"
+        ):
+            self.iupac_names.append(
+                iupac_name.find("{https://www.ebi.ac.uk/webservices/chebi}data").text
+            )
         return self
 
     @xml_exception_angel
@@ -459,9 +541,11 @@ class ChebiPopulator:
         :return: Self to enable chain calling.
         """
         if self.root:
-            self.formulae = self.root \
-                .find("{https://www.ebi.ac.uk/webservices/chebi}Formulae") \
-                .find("{https://www.ebi.ac.uk/webservices/chebi}data").text
+            self.formulae = (
+                self.root.find("{https://www.ebi.ac.uk/webservices/chebi}Formulae")
+                .find("{https://www.ebi.ac.uk/webservices/chebi}data")
+                .text
+            )
 
         return self
 
@@ -474,10 +558,16 @@ class ChebiPopulator:
 
         :return: Self to enable chain calling.
         """
-        for citation in self.root.findall("{https://www.ebi.ac.uk/webservices/chebi}Citations"):
+        for citation in self.root.findall(
+            "{https://www.ebi.ac.uk/webservices/chebi}Citations"
+        ):
             citation_dict = {
-                key: citation.find("{https://www.ebi.ac.uk/webservices/chebi}" + value).text
-                if citation.find("{https://www.ebi.ac.uk/webservices/chebi}" + value) is not None else 'N/A'
+                key: citation.find(
+                    "{https://www.ebi.ac.uk/webservices/chebi}" + value
+                ).text
+                if citation.find("{https://www.ebi.ac.uk/webservices/chebi}" + value)
+                is not None
+                else "N/A"
                 for key, value in self.config.objs.chebi_citation_keys_map.items()
             }
             self.citations.append(citation_dict)
@@ -492,13 +582,16 @@ class ChebiPopulator:
 
         :return: Self to enable chain calling.
         """
-        for database_link in self.root.findall("{https://www.ebi.ac.uk/webservices/chebi}DatabaseLinks"):
+        for database_link in self.root.findall(
+            "{https://www.ebi.ac.uk/webservices/chebi}DatabaseLinks"
+        ):
             database_link_dict = {
                 key: database_link.find(
-                    "{https://www.ebi.ac.uk/webservices/chebi}" + self.config.objs.chebi_database_link_map[key]
+                    "{https://www.ebi.ac.uk/webservices/chebi}"
+                    + self.config.objs.chebi_database_link_map[key]
                 ).text
                 for key in self.config.objs.chebi_citation_keys
-                if key is not 'type'
+                if key is not "type"
             }
             self.database_links.append(database_link_dict)
         return self
@@ -513,16 +606,25 @@ class ChebiPopulator:
 
         :return: Self to enable chain calling.
         """
-        for origin in self.root.findall("{https://www.ebi.ac.uk/webservices/chebi}CompoundOrigins"):
-            chebi_species = origin.find("{https://www.ebi.ac.uk/webservices/chebi}speciesText").text.lower()
+        for origin in self.root.findall(
+            "{https://www.ebi.ac.uk/webservices/chebi}CompoundOrigins"
+        ):
+            chebi_species = origin.find(
+                "{https://www.ebi.ac.uk/webservices/chebi}speciesText"
+            ).text.lower()
             if chebi_species not in self.species:
                 self.species[chebi_species] = []
             origin_dict = {
-                key: origin.find("{https://www.ebi.ac.uk/webservices/chebi}" +
-                                 f"{_InternalUtils.pascal_case(key) if key == 'SpeciesAccession' else key}"
-                                 ).text if origin.find("{https://www.ebi.ac.uk/webservices/chebi}" +
-                                                       f"{_InternalUtils.pascal_case(key) if key == 'SpeciesAccession' else key}"
-                                                       ) is not None else "N/A"
+                key: origin.find(
+                    "{https://www.ebi.ac.uk/webservices/chebi}"
+                    + f"{_InternalUtils.pascal_case(key) if key == 'SpeciesAccession' else key}"
+                ).text
+                if origin.find(
+                    "{https://www.ebi.ac.uk/webservices/chebi}"
+                    + f"{_InternalUtils.pascal_case(key) if key == 'SpeciesAccession' else key}"
+                )
+                is not None
+                else "N/A"
                 for key in self.config.objs.chebi_species_keys
             }
             self.species[chebi_species].append(origin_dict)
@@ -541,15 +643,18 @@ class ChebiPopulator:
         :param id: CHeBI compound ID
         :return: Self to enable chain calling.
         """
-        if f'CHEBI:{id}' in mapping['compound_mapping']:
-            study_species = mapping['compound_mapping'][f'CHEBI:{id}']
+        if f"CHEBI:{id}" in mapping["compound_mapping"]:
+            study_species = mapping["compound_mapping"][f"CHEBI:{id}"]
             for study_s in study_species:
-                temp_study_species = str(study_s['species']).lower()
+                temp_study_species = str(study_s["species"]).lower()
                 if temp_study_species not in self.species:
                     self.species[temp_study_species] = []
                 origin_dict = {
-                    key: study_s[self.config.objs.chebi_species_via_mapping_file_map[key]]
-                    if key is not 'Species' else temp_study_species
+                    key: study_s[
+                        self.config.objs.chebi_species_via_mapping_file_map[key]
+                    ]
+                    if key is not "Species"
+                    else temp_study_species
                     for key in self.config.objs.chebi_species_via_mapping_file_map.keys()
                 }
                 self.species[temp_study_species].append(origin_dict)
@@ -569,11 +674,16 @@ class ExternalAPIHitter:
 
     @staticmethod
     def citation_wrapper(citation_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_citations(*citation_tuple), 'name': 'citations'}
+        return {
+            "results": ExternalAPIHitter.get_citations(*citation_tuple),
+            "name": "citations",
+        }
 
     @staticmethod
     @http_exception_angel
-    def get_citations(citations, config: CompoundBuilderConfig, session: Session) -> list:
+    def get_citations(
+        citations, config: CompoundBuilderConfig, session: Session
+    ) -> list:
         """
         For each citation for a given compound, hit the europePMC API, get json format of the result, and update the
         existing
@@ -586,27 +696,39 @@ class ExternalAPIHitter:
         epmc_list = []
         for citation in citations:
             print(
-                f'attempting to hit {config.urls.misc_urls.epmc_api}{str(citation["value"])}&format=json&resultType=core&cursorMark=*&pageSize=25')
+                f'attempting to hit {config.urls.misc_urls.epmc_api}{str(citation["value"])}&format=json&resultType=core&cursorMark=*&pageSize=25'
+            )
             try:
                 citation_epmc_data = session.get(
-                    f'{config.urls.misc_urls.epmc_api}{str(citation["value"])}&format=json&resultType=core').json()[
-                    'resultList']['result'][0]
+                    f'{config.urls.misc_urls.epmc_api}{str(citation["value"])}&format=json&resultType=core'
+                ).json()["resultList"]["result"][0]
             except json.decoder.JSONDecodeError as e:
-                print(f'No response for individual citation {str(citation["value"])}:{str(e)}')
+                print(
+                    f'No response for individual citation {str(citation["value"])}:{str(e)}'
+                )
                 continue
             except IndexError as e:
-                print(f'No response for individual citation {str(citation["value"])}:{str(e)}')
+                print(
+                    f'No response for individual citation {str(citation["value"])}:{str(e)}'
+                )
                 continue
             citation.update(
-                {key: citation_epmc_data[value] if value in citation_epmc_data else 'NA'
-                 for key, value in config.objs.epmc_citation_keys_map.items()}
+                {
+                    key: citation_epmc_data[value]
+                    if value in citation_epmc_data
+                    else "NA"
+                    for key, value in config.objs.epmc_citation_keys_map.items()
+                }
             )
             epmc_list.append(citation)
         return epmc_list
 
     @staticmethod
     def cactus_wrapper(cactus_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_cactus_structure(*cactus_tuple), 'name': 'cactus'}
+        return {
+            "results": ExternalAPIHitter.get_cactus_structure(*cactus_tuple),
+            "name": "cactus",
+        }
 
     @staticmethod
     @http_exception_angel
@@ -618,16 +740,21 @@ class ExternalAPIHitter:
         :param session: Sesion object used to make http call.
         :return: string of cactus API response.
         """
-        print('Attempting to get data from cactus API.')
-        return session.get(f'{cactus_api}{inchi_key}/sdf').text
+        print("Attempting to get data from cactus API.")
+        return session.get(f"{cactus_api}{inchi_key}/sdf").text
 
     @staticmethod
     def reactions_wrapper(reactions_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_reactions(*reactions_tuple), 'name': 'reactions'}
+        return {
+            "results": ExternalAPIHitter.get_reactions(*reactions_tuple),
+            "name": "reactions",
+        }
 
     @staticmethod
     @http_exception_angel
-    def get_reactions(chebi_compound_dict, rhea_api, conf_objs: CompoundBuilderObjs, session: Session) -> list:
+    def get_reactions(
+        chebi_compound_dict, rhea_api, conf_objs: CompoundBuilderObjs, session: Session
+    ) -> list:
         """
         Ping the RHEA API with the chebi ID for the current compound as a query parameter. Then, for each result, parse
         that result into a dict, and include that dict in the list of reactions. Note that the dict comprehension that
@@ -644,29 +771,42 @@ class ExternalAPIHitter:
         :param session: Session object to make http call.
         :return: list of reaction dicts.
         """
-        print('Attempting to get data from rhea API.')
+        print("Attempting to get data from rhea API.")
         query = "?query="
         columns = "&columns=rhea-id,equation,chebi-id"
         format = "&format=json"
         limit = "&limit=10"
-        rhea_data = session.get(f'{rhea_api}{query}{chebi_compound_dict["id"]}{columns}{format}{limit}').json()
-        print(f'rhea data for chebi id {chebi_compound_dict["id"]} : {rhea_data["results"]}')
+        rhea_data = session.get(
+            f'{rhea_api}{query}{chebi_compound_dict["id"]}{columns}{format}{limit}'
+        ).json()
+        print(
+            f'rhea data for chebi id {chebi_compound_dict["id"]} : {rhea_data["results"]}'
+        )
         reactions = [
             {
                 key: result[value] if value in result else ""
                 for key, value in conf_objs.reactions_keys.items()
-            } for result in rhea_data['results']
+            }
+            for result in rhea_data["results"]
         ]
         return reactions
 
     @staticmethod
     def ms_from_mona_wrapper(spectra_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_ms_from_mona(*spectra_tuple), 'name': 'spectra'}
+        return {
+            "results": ExternalAPIHitter.get_ms_from_mona(*spectra_tuple),
+            "name": "spectra",
+        }
 
     @staticmethod
     @http_exception_angel
     def get_ms_from_mona(
-            mtbls_id: str, dest: str, inchi_key: str, config: CompoundBuilderConfig, session: Session) -> list:
+        mtbls_id: str,
+        dest: str,
+        inchi_key: str,
+        config: CompoundBuilderConfig,
+        session: Session,
+    ) -> list:
         """
         Ping the MoNA API with the inchikey for a given compound as a query parameter. Then, for each result, parse that
         result into a spectra dict, and pass that dict to `_FileHandler.save_spectra` to further process the spectral
@@ -679,33 +819,52 @@ class ExternalAPIHitter:
         :return: list of spectra objects representing a spectrum.
         """
         print(
-            f"Attempting to get spectral data from MoNa at {f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}'}")
+            f"Attempting to get spectral data from MoNa at {f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}'}"
+        )
         ml_spectrum = []
-        response = session.get(f'{config.urls.misc_urls.new_mona_api.format(inchi_key)}')
+        response = session.get(
+            f"{config.urls.misc_urls.new_mona_api.format(inchi_key)}"
+        )
         result = response.json()
         for spectra in result:
-            ml_spectra = {'splash': spectra['splash'], 'type': 'MS', 'name': str(spectra['id']),
-                          'url': f'/metabolights/webservice/beta/spectra/{mtbls_id}/{str(spectra["id"])}'}
-            temp_submitter = spectra['submitter']
-            ml_spectra['submitter'] = f"{str(temp_submitter['firstName'])}  {str(temp_submitter['lastName'])} ; " \
-                                      f"{str(temp_submitter['emailAddress'])} ; {str(temp_submitter['institution'])}"
-            ml_spectra['attributes'] = []
-            for metadata in spectra['metaData']:
-                if not metadata['computed']:
-                    temp_attribute = {'attributeName': metadata['name'], 'attributeValue': metadata['value'],
-                                      'attributeDescription': ""}
-                    ml_spectra['attributes'].append(temp_attribute)
+            ml_spectra = {
+                "splash": spectra["splash"],
+                "type": "MS",
+                "name": str(spectra["id"]),
+                "url": f'/metabolights/webservice/beta/spectra/{mtbls_id}/{str(spectra["id"])}',
+            }
+            temp_submitter = spectra["submitter"]
+            ml_spectra["submitter"] = (
+                f"{str(temp_submitter['firstName'])}  {str(temp_submitter['lastName'])} ; "
+                f"{str(temp_submitter['emailAddress'])} ; {str(temp_submitter['institution'])}"
+            )
+            ml_spectra["attributes"] = []
+            for metadata in spectra["metaData"]:
+                if not metadata["computed"]:
+                    temp_attribute = {
+                        "attributeName": metadata["name"],
+                        "attributeValue": metadata["value"],
+                        "attributeDescription": "",
+                    }
+                    ml_spectra["attributes"].append(temp_attribute)
             ml_spectrum.append(ml_spectra)
-            _FileHandler.save_spectra(str(spectra['id']), spectra['spectrum'], mtbls_id, dest)
+            _FileHandler.save_spectra(
+                str(spectra["id"]), spectra["spectrum"], mtbls_id, dest
+            )
         return ml_spectrum
 
     @staticmethod
     def wikipathways_wrapper(pathway_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_wikipathways(*pathway_tuple), 'name': 'wikipathways'}
+        return {
+            "results": ExternalAPIHitter.get_wikipathways(*pathway_tuple),
+            "name": "wikipathways",
+        }
 
     @staticmethod
     @http_exception_angel
-    def get_wikipathways(inchi_key: str, config: CompoundBuilderConfig, session: Session) -> dict:
+    def get_wikipathways(
+        inchi_key: str, config: CompoundBuilderConfig, session: Session
+    ) -> dict:
         """
         Hit the wikipathways API, and for each result / pathway, parse it into a new dict and append that pathway to a
         parent `final_pathways` object. The final object is the representation of all pathways for a given compound,
@@ -717,27 +876,38 @@ class ExternalAPIHitter:
         """
         format_params = "&codes=Ik&format=json"
         print(
-            f'Attempting to retrieve wikipathways data from {config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}')
+            f"Attempting to retrieve wikipathways data from {config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"
+        )
         final_pathways = {}
         wikipathways = session.get(
-            f'{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}').json()['result']
+            f"{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"
+        ).json()["result"]
 
         for pathway in wikipathways:
-            if pathway['species'] not in final_pathways:
-                final_pathways[pathway['species']] = []
-            pathway_dict = {'id': pathway['id'], 'url': pathway['url'], 'name': pathway['name']}
-            if pathway_dict not in final_pathways[pathway['species']]:
-                final_pathways[pathway['species']].append(pathway_dict)
+            if pathway["species"] not in final_pathways:
+                final_pathways[pathway["species"]] = []
+            pathway_dict = {
+                "id": pathway["id"],
+                "url": pathway["url"],
+                "name": pathway["name"],
+            }
+            if pathway_dict not in final_pathways[pathway["species"]]:
+                final_pathways[pathway["species"]].append(pathway_dict)
 
         return final_pathways
 
     @staticmethod
     def kegg_wrapper(kegg_tuple) -> dict:
-        return {'results': ExternalAPIHitter.get_kegg_pathways(*kegg_tuple), 'name': 'kegg_pathways'}
+        return {
+            "results": ExternalAPIHitter.get_kegg_pathways(*kegg_tuple),
+            "name": "kegg_pathways",
+        }
 
     @staticmethod
     @http_exception_angel
-    def get_kegg_pathways(chebi_compound_dict: dict, config: CompoundBuilderConfig, session: Session) -> list:
+    def get_kegg_pathways(
+        chebi_compound_dict: dict, config: CompoundBuilderConfig, session: Session
+    ) -> list:
         """
         Hit the kegg API using the compounds chebi ID as a query parameter. Then, hit kegg's pathway list API using the
         kegg id that we got from the previous request. Then, for each line in the pathways list response, hit kegg's
@@ -747,42 +917,59 @@ class ExternalAPIHitter:
         :param session: Session object to make http calls.
         :return: list of kegg pathway objects.
         """
-        print(f'Attempting to retrieve KEGG data from {config.urls.kegg.kegg_api}{chebi_compound_dict["id"].lower()}')
+        print(
+            f'Attempting to retrieve KEGG data from {config.urls.kegg.kegg_api}{chebi_compound_dict["id"].lower()}'
+        )
         final_kegg_pathways = []
-        kegg_id_q_r = session.get(f'{config.urls.kegg.kegg_api}{chebi_compound_dict["id"].lower()}')
+        kegg_id_q_r = session.get(
+            f'{config.urls.kegg.kegg_api}{chebi_compound_dict["id"].lower()}'
+        )
         kegg_id = None
         try:
             kegg_id = kegg_id_q_r.text.split("\t")[1].strip()
         except IndexError as e:
-            print(f'Unable to get a corresponding CPD number for chebi compound {chebi_compound_dict["id"]}: {str(e)}')
+            print(
+                f'Unable to get a corresponding CPD number for chebi compound {chebi_compound_dict["id"]}: {str(e)}'
+            )
         if kegg_id is None:
             return final_kegg_pathways
 
-        print(f'Attempting step 2 of getting kegg data with url {config.urls.kegg.kegg_pathways_list_api}{kegg_id}')
-        pathways_data = session.get(f'{config.urls.kegg.kegg_pathways_list_api}{kegg_id}').text
+        print(
+            f"Attempting step 2 of getting kegg data with url {config.urls.kegg.kegg_pathways_list_api}{kegg_id}"
+        )
+        pathways_data = session.get(
+            f"{config.urls.kegg.kegg_pathways_list_api}{kegg_id}"
+        ).text
         for line in pathways_data.strip().split("\n"):
             if line == "":
                 continue
             try:
                 pathway_id = line.split("\t")[1].strip()
             except IndexError as e:
-                print(f'Couldnt get pathway id due to index error when parsing pathways response: {str(e)}')
+                print(
+                    f"Couldnt get pathway id due to index error when parsing pathways response: {str(e)}"
+                )
                 continue
-            pathway_data = session.get(f'{config.urls.kegg.kegg_pathway_api}{pathway_id}').text
-            pathway_dict = {'id': pathway_id}
+            pathway_data = session.get(
+                f"{config.urls.kegg.kegg_pathway_api}{pathway_id}"
+            ).text
+            pathway_dict = {"id": pathway_id}
             for pline in pathway_data.strip().split("\n"):
                 if "NAME" in pline:
-                    pathway_dict['name'] = pline.replace("NAME", "").strip()
+                    pathway_dict["name"] = pline.replace("NAME", "").strip()
                 elif "KO_PATHWAY" in pline:
-                    pathway_dict['KO_PATHWAYS'] = pline.replace('KO_PATHWAYS', '').strip()
+                    pathway_dict["KO_PATHWAYS"] = pline.replace(
+                        "KO_PATHWAYS", ""
+                    ).strip()
                 elif "DESCRIPTION" in pline:
-                    pathway_dict['description'] = pline.replace('DESCRIPTION', "").strip()
+                    pathway_dict["description"] = pline.replace(
+                        "DESCRIPTION", ""
+                    ).strip()
             final_kegg_pathways.append(pathway_dict)
         return final_kegg_pathways
 
 
 class ExternalAPIResultSorter:
-
     def __init__(self, mementos):
         self.mementos = mementos
 
@@ -808,7 +995,9 @@ class ExternalAPIResultSorter:
         :return: The metabolights_dict updated with all results from the `ataronchronon` multithreaded process.
         """
         for memento in self.mementos:
-            metabolights_dict = self.__getattribute__(f'handle_{memento["name"]}')(memento, metabolights_dict)
+            metabolights_dict = self.__getattribute__(f'handle_{memento["name"]}')(
+                memento, metabolights_dict
+            )
         return metabolights_dict
 
     def handle_cactus(self, cactus_memento, metabolights_dict: dict) -> dict:
@@ -819,12 +1008,12 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the structure field updated.
         """
-        if cactus_memento['results'] is None or cactus_memento['results'] == []:
-            metabolights_dict['structure'] = 'NA'
+        if cactus_memento["results"] is None or cactus_memento["results"] == []:
+            metabolights_dict["structure"] = "NA"
             print(f'Compound Error {metabolights_dict["id"]} Structure not assigned.')
             return metabolights_dict
 
-        metabolights_dict['structure'] = cactus_memento['results']
+        metabolights_dict["structure"] = cactus_memento["results"]
         return metabolights_dict
 
     def handle_citations(self, citations_memento, metabolights_dict: dict) -> dict:
@@ -835,13 +1024,13 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the citations field and flag updated.
         """
-        if citations_memento['results'] is None or citations_memento['results'] == []:
-            metabolights_dict['citations'] = []
-            metabolights_dict['flags']['hasLiterature'] = 'false'
+        if citations_memento["results"] is None or citations_memento["results"] == []:
+            metabolights_dict["citations"] = []
+            metabolights_dict["flags"]["hasLiterature"] = "false"
             return metabolights_dict
 
-        metabolights_dict['citations'] = citations_memento['results']
-        metabolights_dict['flags']['hasLiterature'] = 'true'
+        metabolights_dict["citations"] = citations_memento["results"]
+        metabolights_dict["flags"]["hasLiterature"] = "true"
         return metabolights_dict
 
     def handle_spectra(self, spectra_memento, metabolights_dict: dict) -> dict:
@@ -852,13 +1041,13 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the spectra['MS'] field and flag updated.
         """
-        if spectra_memento['results'] is None or spectra_memento['results'] == []:
+        if spectra_memento["results"] is None or spectra_memento["results"] == []:
             print(f'No MoNa info available for {metabolights_dict["id"]}')
-            metabolights_dict['flags']['hasMS'] = 'false'
+            metabolights_dict["flags"]["hasMS"] = "false"
             return metabolights_dict
 
-        metabolights_dict['spectra']['MS'] = spectra_memento['results']
-        metabolights_dict['flags']['MS'] = 'true'
+        metabolights_dict["spectra"]["MS"] = spectra_memento["results"]
+        metabolights_dict["flags"]["MS"] = "true"
         return metabolights_dict
 
     def handle_kegg_pathways(self, kegg_memento, metabolights_dict: dict) -> dict:
@@ -869,10 +1058,10 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the pathways['KEGGPathways'] field updated.
         """
-        if kegg_memento['results'] is None or kegg_memento['results'] == {}:
+        if kegg_memento["results"] is None or kegg_memento["results"] == {}:
             print(f'No KEGG info for {metabolights_dict["id"]}')
             return metabolights_dict
-        metabolights_dict['pathways']['KEGGPathways'] = kegg_memento['results']
+        metabolights_dict["pathways"]["KEGGPathways"] = kegg_memento["results"]
         return metabolights_dict
 
     def handle_wikipathways(self, wiki_memento, metabolights_dict: dict) -> dict:
@@ -883,10 +1072,10 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the pathways['WikiPathways'] field updated.
         """
-        if wiki_memento['results'] is None or wiki_memento['results'] == {}:
+        if wiki_memento["results"] is None or wiki_memento["results"] == {}:
             print(f'No WikiPathways info for {metabolights_dict["id"]}')
             return metabolights_dict
-        metabolights_dict['pathways']['WikiPathways'] = wiki_memento['results']
+        metabolights_dict["pathways"]["WikiPathways"] = wiki_memento["results"]
         return metabolights_dict
 
     def handle_reactions(self, reactions_memento, metabolights_dict: dict) -> dict:
@@ -897,13 +1086,15 @@ class ExternalAPIResultSorter:
         :param metabolights_dict: The in progress metabolights compound dict.
         :return: The metabolights_dict with the reactions field and flag updated.
         """
-        if reactions_memento['results'] is None or reactions_memento == []:
-            print(f'No Rhea info for {metabolights_dict["id"]}. Reactions not assigned.')
-            metabolights_dict['flags']['hasReactions'] = 'false'
+        if reactions_memento["results"] is None or reactions_memento == []:
+            print(
+                f'No Rhea info for {metabolights_dict["id"]}. Reactions not assigned.'
+            )
+            metabolights_dict["flags"]["hasReactions"] = "false"
             return metabolights_dict
 
-        metabolights_dict['reactions'] = reactions_memento['results']
-        metabolights_dict['flags']['hasReactions'] = 'true'
+        metabolights_dict["reactions"] = reactions_memento["results"]
+        metabolights_dict["flags"]["hasReactions"] = "true"
         return metabolights_dict
 
 
@@ -929,7 +1120,7 @@ class _InternalUtils:
             val = root.find("{https://www.ebi.ac.uk/webservices/chebi}" + key).text
         except Exception as e:
             logging.exception(str(e))
-            print(f'error getting key {str(e)} from chebi response')
+            print(f"error getting key {str(e)} from chebi response")
         return val
 
     @staticmethod
@@ -942,12 +1133,12 @@ class _InternalUtils:
         """
         metabolights_compound = {}
         metabolights_compound["flags"] = {}
-        metabolights_compound["flags"]['hasLiterature'] = "false"
-        metabolights_compound["flags"]['hasReactions'] = "false"
-        metabolights_compound["flags"]['hasSpecies'] = "false"
-        metabolights_compound["flags"]['hasPathways'] = "false"
-        metabolights_compound["flags"]['hasNMR'] = "false"
-        metabolights_compound["flags"]['hasMS'] = "false"
+        metabolights_compound["flags"]["hasLiterature"] = "false"
+        metabolights_compound["flags"]["hasReactions"] = "false"
+        metabolights_compound["flags"]["hasSpecies"] = "false"
+        metabolights_compound["flags"]["hasPathways"] = "false"
+        metabolights_compound["flags"]["hasNMR"] = "false"
+        metabolights_compound["flags"]["hasMS"] = "false"
         return metabolights_compound
 
     @staticmethod
@@ -966,7 +1157,9 @@ class _InternalUtils:
 
     @staticmethod
     def gimme_line():
-        print('-----------------------------------------------------------------------------------------------------')
+        print(
+            "-----------------------------------------------------------------------------------------------------"
+        )
 
     @staticmethod
     def pascal_case(string: str) -> str:
@@ -998,4 +1191,4 @@ class _InternalUtils:
         :param method: Function wrapper object.
         :return: Function name.
         """
-        return method.__name__.split('.')[-1]
+        return method.__name__.split(".")[-1]

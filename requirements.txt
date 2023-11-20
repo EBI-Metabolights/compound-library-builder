@@ -6,3 +6,4 @@ jinja2
 pytest
 redis
 PyYAML
+black

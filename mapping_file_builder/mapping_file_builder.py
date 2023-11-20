@@ -19,10 +19,12 @@ class RefMapping:
     compound_mapping: dict
     species_list: List[str]
 
+
 class PersistenceEnum(Enum):
     pickle = auto()
     msgpack = auto()
     vanilla = auto()
+
 
 class MappingFileBuilderConfig:
     mtbls_ws: MtblsWsUrls = MtblsWsUrls()
@@ -41,27 +43,39 @@ def build():
     session = requests.Session()
     master_mapping = RefMapping({}, {}, [])
     overall_process_timer = Timer(datetime.datetime.now(), None)
-    mpm = MappingPersistenceManager(root='./', timers_enabled=True)
+    mpm = MappingPersistenceManager(root="./", timers_enabled=True)
 
-    studies_list = session.get(config.mtbls_ws.metabolights_ws_studies_list).json()['content']
+    studies_list = session.get(config.mtbls_ws.metabolights_ws_studies_list).json()[
+        "content"
+    ]
     list_of_lists = ListUtils.get_lol(studies_list, config.thread_count)
     list_of_lists = list_of_lists[:120] if config.debug is True else list_of_lists
 
     for l in list_of_lists:
         ephemera = ataronchronon(accessions=l, session=session, config=config)
         for ephemeron in ephemera:
-            master_mapping = RefMapOperationsHandler.merge_refmaps(master_mapping, ephemeron)
+            master_mapping = RefMapOperationsHandler.merge_refmaps(
+                master_mapping, ephemeron
+            )
 
     master_mapping.species_list = list(set(master_mapping.species_list))
-    benchmark_persistence_clients(master_mapping=master_mapping, mpm=mpm, list_of_lists=list_of_lists) if config.debug else None
+    benchmark_persistence_clients(
+        master_mapping=master_mapping, mpm=mpm, list_of_lists=list_of_lists
+    ) if config.debug else None
 
-    print(f'Saving mapping file using {config.pers.name} as persistence medium.')
-    mpm.__getattribute__(config.pers.name).save(asdict(master_mapping), 'mapping')
+    print(f"Saving mapping file using {config.pers.name} as persistence medium.")
+    mpm.__getattribute__(config.pers.name).save(asdict(master_mapping), "mapping")
     overall_process_timer.end = datetime.datetime.now()
-    print(f'Overall, the reference file building process took {str(overall_process_timer.delta())}')
+    print(
+        f"Overall, the reference file building process took {str(overall_process_timer.delta())}"
+    )
 
 
-def benchmark_persistence_clients(master_mapping: RefMapping, mpm: MappingPersistenceManager, list_of_lists: List[List[str]]):
+def benchmark_persistence_clients(
+    master_mapping: RefMapping,
+    mpm: MappingPersistenceManager,
+    list_of_lists: List[List[str]],
+):
     """
     Record the read op performance of each persistence client.
     :param master_mapping: The Refmapping object to be saved.
@@ -69,20 +83,18 @@ def benchmark_persistence_clients(master_mapping: RefMapping, mpm: MappingPersis
     :param list_of_lists: The list of sublists that was processed.
     :return:
     """
-    tp = mpm.pickle.save(asdict(master_mapping), 'mapping')
-    tmp = mpm.msgpack.save(asdict(master_mapping), 'mapping')
-    tvj = mpm.vanilla.save(asdict(master_mapping), 'mapping')
+    tp = mpm.pickle.save(asdict(master_mapping), "mapping")
+    tmp = mpm.msgpack.save(asdict(master_mapping), "mapping")
+    tvj = mpm.vanilla.save(asdict(master_mapping), "mapping")
 
-    print(f'Pickle: Saved {len(list_of_lists) * 6} in {str(tp.delta())}')
-    print(f'MsgPack: Saved {len(list_of_lists) * 6} in {str(tmp.delta())}')
-    print(f'VanillaJSON: Saved {len(list_of_lists) * 6} in {str(tvj.delta())}')
-
-
-
+    print(f"Pickle: Saved {len(list_of_lists) * 6} in {str(tp.delta())}")
+    print(f"MsgPack: Saved {len(list_of_lists) * 6} in {str(tmp.delta())}")
+    print(f"VanillaJSON: Saved {len(list_of_lists) * 6} in {str(tvj.delta())}")
 
 
 def ataronchronon(
-        accessions: List[str], session: requests.Session, config: MappingFileBuilderConfig) -> List[RefMapping]:
+    accessions: List[str], session: requests.Session, config: MappingFileBuilderConfig
+) -> List[RefMapping]:
     """
     Process a sub-list of MTBLS Accessions. Each accession is given to a thread in a ThreadPool, the task for each
     thread is submitted, and we await the results of each thread before returning the results as a list of RefMapping object
@@ -91,14 +103,17 @@ def ataronchronon(
     :param config: A MAppingFileBuilderConfig object, to pass to the threads.
     :return: A List of RefMapping objects, where each one is the output from a single thread having processed an accession.
     """
-    input_list = [(acc, RefMapping({},{},[]), session, config) for acc in accessions]
+    input_list = [(acc, RefMapping({}, {}, []), session, config) for acc in accessions]
     method_list = [process_accession_wrapper for acc in accessions]
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ur_executor:
         the_futures = [
-            ur_executor.submit(method, args) for method, args in zip(method_list, input_list)
+            ur_executor.submit(method, args)
+            for method, args in zip(method_list, input_list)
         ]
-        the_results = [future.result() for future
-                       in concurrent.futures.as_completed(the_futures, config.timeout)]
+        the_results = [
+            future.result()
+            for future in concurrent.futures.as_completed(the_futures, config.timeout)
+        ]
         return the_results
 
 
@@ -112,7 +127,11 @@ def process_accession_wrapper(input_tuple) -> RefMapping:
 
 
 def process_accession(
-        accession: str, mapping: RefMapping, session: requests.Session, config: MappingFileBuilderConfig) -> RefMapping:
+    accession: str,
+    mapping: RefMapping,
+    session: requests.Session,
+    config: MappingFileBuilderConfig,
+) -> RefMapping:
     """
     Populate a RefMapping object for the given study. This RefMapping object is later merged with the 'master'
     RefMapping object in the `build` method. It first makes a GET request to the study detail API, and then assuming no
@@ -125,54 +144,72 @@ def process_accession(
     :param config: MappingFileBuilderConfig object.
     :return: Populated RefMapping object. May be next to blank if there is a problem with getting assay sheets.
     """
-    print(f'Processing {accession}')
-    print(f'Getting study details for {accession}')
+    print(f"Processing {accession}")
+    print(f"Getting study details for {accession}")
 
-    study_details = get_study_details(session, f'{config.mtbls_ws.metabolights_ws_study_url}/{accession}')
-    organism_data = study_details['organism']
+    study_details = get_study_details(
+        session, f"{config.mtbls_ws.metabolights_ws_study_url}/{accession}"
+    )
+    organism_data = study_details["organism"]
     has_multiple_organisms = len(organism_data) > 1 if organism_data else False
 
-
-    if study_details['assays'] is None:
-        print(f'{accession} has no assay information')
+    if study_details["assays"] is None:
+        print(f"{accession} has no assay information")
         return mapping
 
     assay_index = 1
 
-    for assay in study_details['assays']:
-        maf_lines = session.get(f'{config.mtbls_ws.metabolights_ws_study_url}/{accession}/assay/{assay_index}/maf').json()['content']
+    for assay in study_details["assays"]:
+        maf_lines = session.get(
+            f"{config.mtbls_ws.metabolights_ws_study_url}/{accession}/assay/{assay_index}/maf"
+        ).json()["content"]
         if maf_lines is None:
             return mapping
-        for line in maf_lines['data']['rows']:
-            db_id = str(line['database_identifier'])
+        for line in maf_lines["data"]["rows"]:
+            db_id = str(line["database_identifier"])
             part = ""
-            if db_id is not '':
-                species = str(line['species']) if 'species' in line else ''
+            if db_id is not "":
+                species = str(line["species"]) if "species" in line else ""
                 if not has_multiple_organisms:
-                    species = organism_data[0]['organismName']
-                    part = organism_data[0]['organismPart']
-                mapping.species_list.append(species) if species not in mapping.species_list and species != '' else None
+                    species = organism_data[0]["organismName"]
+                    part = organism_data[0]["organismPart"]
+                mapping.species_list.append(
+                    species
+                ) if species not in mapping.species_list and species != "" else None
 
-                mapping.compound_mapping[db_id] = [] if db_id not in mapping.compound_mapping.keys() else mapping.compound_mapping[db_id]
-                mapping.compound_mapping[db_id].append({
-                        'study': accession,
-                        'assay': assay_index,
-                        'species': species,
-                        'part': part,
-                        'taxid': line['taxid'] if 'taxid' in line else '',
-                        'mafEntry': line
-                })
+                mapping.compound_mapping[db_id] = (
+                    []
+                    if db_id not in mapping.compound_mapping.keys()
+                    else mapping.compound_mapping[db_id]
+                )
+                mapping.compound_mapping[db_id].append(
+                    {
+                        "study": accession,
+                        "assay": assay_index,
+                        "species": species,
+                        "part": part,
+                        "taxid": line["taxid"] if "taxid" in line else "",
+                        "mafEntry": line,
+                    }
+                )
 
-                mapping.study_mapping[accession] = [] if accession not in mapping.study_mapping.keys() else mapping.study_mapping[accession]
-                mapping.study_mapping[accession].append({
-                    'compound': db_id,
-                    'assay': assay_index,
-                    'species': species,
-                    'part': part,
-                })
+                mapping.study_mapping[accession] = (
+                    []
+                    if accession not in mapping.study_mapping.keys()
+                    else mapping.study_mapping[accession]
+                )
+                mapping.study_mapping[accession].append(
+                    {
+                        "compound": db_id,
+                        "assay": assay_index,
+                        "species": species,
+                        "part": part,
+                    }
+                )
         assay_index += 1
 
     return mapping
+
 
 @http_exception_angel
 def get_study_details(session: requests.Session, url: str) -> dict:
@@ -182,12 +219,11 @@ def get_study_details(session: requests.Session, url: str) -> dict:
     :param url: Request path.
     :return: Response's content field as a dict.
     """
-    response = session.get(url).json()['content']
+    response = session.get(url).json()["content"]
     return response
 
 
 class RefMapOperationsHandler:
-
     @staticmethod
     def merge_refmaps(master: RefMapping, absorb: RefMapping) -> RefMapping:
         """
@@ -201,12 +237,18 @@ class RefMapOperationsHandler:
         master.species_list += absorb.species_list
         new_master = RefMapping({}, {}, master.species_list + absorb.species_list)
 
-        new_master = RefMapOperationsHandler.dict_merger(new_master, master, absorb, 'compound_mapping')
-        new_master = RefMapOperationsHandler.dict_merger(new_master, master, absorb, 'study_mapping')
+        new_master = RefMapOperationsHandler.dict_merger(
+            new_master, master, absorb, "compound_mapping"
+        )
+        new_master = RefMapOperationsHandler.dict_merger(
+            new_master, master, absorb, "study_mapping"
+        )
         return new_master
 
     @staticmethod
-    def dict_merger(new_master: RefMapping, old_master: RefMapping, absorb: RefMapping, which: str) -> RefMapping:
+    def dict_merger(
+        new_master: RefMapping, old_master: RefMapping, absorb: RefMapping, which: str
+    ) -> RefMapping:
         """
         Merge two dicts from different RefMapping objects together while preserving all values.
         :param new_master: A new RefMapping object to store the results of the merge
@@ -217,8 +259,12 @@ class RefMapOperationsHandler:
         """
         for key, value in absorb.__getattribute__(which).items():
             if key in old_master.__getattribute__(which):
-                if isinstance(value, list) and isinstance(old_master.__getattribute__(which)[key], list):
-                    new_master.__getattribute__(which)[key] = value + old_master.__getattribute__(which)[key]
+                if isinstance(value, list) and isinstance(
+                    old_master.__getattribute__(which)[key], list
+                ):
+                    new_master.__getattribute__(which)[key] = (
+                        value + old_master.__getattribute__(which)[key]
+                    )
             else:
                 new_master.__getattribute__(which)[key] = value
 
@@ -228,5 +274,5 @@ class RefMapOperationsHandler:
         return new_master
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     build()

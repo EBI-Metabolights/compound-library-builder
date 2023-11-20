@@ -7,7 +7,9 @@ class DebugBuilderStats:
 
     def __init__(self):
         self.count_total_compounds = 0
-        self.count_total_complete_compounds = 0 # need to define complete first - some info is gone forever
+        self.count_total_complete_compounds = (
+            0  # need to define complete first - some info is gone forever
+        )
         self.count_compounds_with_ms = 0
         self.count_total_ms_files = 0
         self.count_compounds_with_nmr = 0
@@ -22,7 +24,5 @@ class DebugBuilderStats:
         :param inc: int amount to increment by.
         :return: None
         """
-        current = getattr(self, f'count_{which}', 0)
-        setattr(self, f'count_{which}', current + inc)
-
-
+        current = getattr(self, f"count_{which}", 0)
+        setattr(self, f"count_{which}", current + inc)
