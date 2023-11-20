@@ -56,14 +56,14 @@ class RedisClient:
 
         return {"exists": exists, "items": length_of_list}
 
-    def empty_queue(self, queue_name) -> Any:
+    def empty_queue(self, queue_name) -> int:
         """
         Delete a given queue and all the items held within.
         :param queue_name: The name of the queue to delete.
-        :return: None
+        :return: int indicating number of keys deleted - 1 if queue deleted, 0 if not.
         """
         resp = self.redis.delete(queue_name)
-        return None
+        return resp
 
     def consume_queue(self, queue_name: str) -> Any:
         """

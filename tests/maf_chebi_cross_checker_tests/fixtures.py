@@ -88,7 +88,8 @@ def study_file_endpoint_fixture():
             {
                 "createdAt": "March 10 2017 17:53:55",
                 "directory": False,
-                "file": "m_s_aureus_adaptation_to_different_human_cell_lines_metabolite_profiling_NMR_spectroscopy_v2_maf.tsv",
+                "file": "m_s_aureus_adaptation_to_different_human_cell_lines_metabolite_profiling_NMR_spectroscopy_v2_"
+                        "maf.tsv",
                 "status": "active",
                 "timestamp": "20170310175355",
                 "type": "metadata_maf",

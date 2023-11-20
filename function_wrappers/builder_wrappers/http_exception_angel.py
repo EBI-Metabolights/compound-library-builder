@@ -27,7 +27,7 @@ def http_exception_angel(func):
             print(f"args: {str(args)}")
         except SSLError as e:
             print(
-                f"Secure Sockets Layer Error when processing http request. Is the endpoint HTTPS enabled?"
+                f"Secure Sockets Layer Error when processing http request. Is the endpoint HTTPS enabled?: {str(e)}"
             )
         except ConnectionError as e:
             logging.exception(str(e))

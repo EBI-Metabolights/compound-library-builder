@@ -46,11 +46,11 @@ class TestChecker:
 
         checker_fixture.go()
 
-        assert checker_fixture.session.get.call_count is 2
-        assert checker_fixture.get_list_of_maf_files_in_study.call_count is 1
-        assert checker_fixture.get_maf.call_count is 1
-        assert checker_fixture.process_maf.call_count is 0
-        assert checker_fixture.bad_mafs.__len__() is 1
+        assert checker_fixture.session.get.call_count == 2
+        assert checker_fixture.get_list_of_maf_files_in_study.call_count == 1
+        assert checker_fixture.get_maf.call_count == 1
+        assert checker_fixture.process_maf.call_count == 0
+        assert checker_fixture.bad_mafs.__len__() == 1
 
     def test_get_list_of_maf_files_in_studies_good_resp(
         self, checker_fixture, study_file_endpoint_fixture
@@ -103,13 +103,13 @@ class TestChecker:
             len(result.maf.primary)
             + len(result.maf.secondary)
             + len(result.maf.incorrect)
-            is 2
+            == 2
         )
         assert result.maf.primary == {"1", "2"}
 
         assert (
             len(result.db.primary) + len(result.db.secondary) + len(result.db.incorrect)
-            is 3
+            == 3
         )
         assert result.db.primary == {"7", "8", "9"}
 
@@ -127,13 +127,13 @@ class TestChecker:
             len(result.maf.primary)
             + len(result.maf.secondary)
             + len(result.maf.incorrect)
-            is 2
+            == 2
         )
         assert result.maf.secondary == {"1", "2"}
 
         assert (
             len(result.db.primary) + len(result.db.secondary) + len(result.db.incorrect)
-            is 3
+            == 3
         )
         assert result.db.secondary == {"7", "8", "9"}
 
@@ -151,13 +151,13 @@ class TestChecker:
             len(result.maf.primary)
             + len(result.maf.secondary)
             + len(result.maf.incorrect)
-            is 2
+            == 2
         )
         assert result.maf.incorrect == {"1", "2"}
 
         assert (
             len(result.db.primary) + len(result.db.secondary) + len(result.db.incorrect)
-            is 3
+            == 3
         )
         assert result.db.incorrect == {"7", "8", "9"}
 
@@ -171,19 +171,19 @@ class TestChecker:
         XmlResponseUtils.get_chebi_id = fake_chebi_get
 
         result = checker_fixture.is_primary(id)
-        assert fake_chebi_get.call_count is 1
+        assert fake_chebi_get.call_count == 1
         assert result is True
 
         fake_chebi_get.return_value = "CHEBI:16450"
         result = checker_fixture.is_primary(id)
 
-        assert fake_chebi_get.call_count is 2
+        assert fake_chebi_get.call_count == 2
         assert result is False
 
         fake_chebi_get.return_value = None
         result = checker_fixture.is_primary(id)
 
-        assert fake_chebi_get.call_count is 3
+        assert fake_chebi_get.call_count == 3
         assert result is None
 
     def test_get_delta(self, checker_fixture):
@@ -218,32 +218,32 @@ class TestChecker:
         Checkers ids set."""
         identifier = 0.0
         checker_fixture.process_identifier(identifier)
-        assert len(checker_fixture.ids) is 0
+        assert len(checker_fixture.ids) == 0
 
         identifier = 1
         checker_fixture.process_identifier(identifier)
-        assert len(checker_fixture.ids) is 0
+        assert len(checker_fixture.ids) == 0
 
     def test_process_identifier_multiple_chebi_ids(self, checker_fixture):
         """Test the process_identifier method by giving it an identifier with multiple chebi IDs, and expecting each ID
         to be added to the Checkers ids set."""
         identifier = "CHEBI:123|CHEBI:456|CHEBI:789"
         checker_fixture.process_identifier(identifier)
-        assert len(checker_fixture.ids) is 3
+        assert len(checker_fixture.ids) == 3
 
     def test_process_identifier_multiple_chebi_ids_with_duds(self, checker_fixture):
         """Test the process_identifier method by giving it an identifier with multiple chebi IDs and expecting each
         legitimate ID to be added to the Checkers ids set, with the duds cast aside."""
         identifier = "unknown|CHEBI:123|unknown"
         checker_fixture.process_identifier(identifier)
-        assert len(checker_fixture.ids) is 1
+        assert len(checker_fixture.ids) == 1
 
     def test_process_identifier_unexpected(self, checker_fixture):
         """Test the process_identifier method by giving it an unexpected string that should not be added to the Checkers
         ids set."""
         identifier = "chemistry"
         checker_fixture.process_identifier(identifier)
-        assert len(checker_fixture.ids) is 0
+        assert len(checker_fixture.ids) == 0
 
     def test_is_dud(self, checker_fixture):
         """Test the is_dud method by giving it a bunch of duds and expecting it to say they are all duds."""

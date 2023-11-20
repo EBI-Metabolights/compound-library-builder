@@ -300,8 +300,10 @@ class Checker:
     ) -> None:
         """
         Save a report with metrics from the run of Checker.go
-        :param maf_registry: IDRegistry object containing information about the number of unique primary/secondary IDs within MAF sheets.
-        :param db_registry: IDRegistry object containing information about the number of unique primary/secondary IDs within MAF sheets.
+        :param maf_registry: IDRegistry object containing information about the number of unique primary/secondary IDs
+            within MAF sheets.
+        :param db_registry: IDRegistry object containing information about the number of unique primary/secondary IDs
+            within the postgres table.
         :param overview: OverviewMetrics object containing information about the studies and MAF sheets processed.
         :return: None
         """

@@ -2,7 +2,7 @@ import argparse
 import ast
 import json
 import sys
-from typing import List, Any, Union, Optional
+from typing import List
 import yaml
 import requests
 
@@ -53,8 +53,8 @@ class CompoundRedisQueueManager:
         :return: None
         """
         sublist_index, success = 0, 0
-        for l in chunked_compound_lists:
-            resp = self.redis_client.push_to_queue("compounds", json.dumps(l))
+        for lis in chunked_compound_lists:
+            resp = self.redis_client.push_to_queue("compounds", json.dumps(lis))
             if resp is not None:
                 success += 1
                 print(f"Pushed sublist {sublist_index} to queue")

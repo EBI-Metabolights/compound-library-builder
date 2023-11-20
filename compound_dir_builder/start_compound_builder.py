@@ -27,7 +27,6 @@ def main(args):
 
     destination_directory = args.destination
     ftp = args.ftp
-    new_compounds_only = args.new_compounds_only
     using_queue = args.queue
     overall_process_timer = Timer(datetime.datetime.now(), None)
     with open(f"{args.queue_config}", "r") as f:

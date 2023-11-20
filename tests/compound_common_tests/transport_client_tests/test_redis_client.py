@@ -1,8 +1,5 @@
 import json
-import logging
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from tests.compound_common_tests.transport_client_tests.fixtures import (
     redis_client_fixture,
@@ -61,7 +58,15 @@ class TestRedisClient:
         rc.redis.llen = MagicMock()
         result = rc.check_queue_exists("test")
         assert result == {"exists": False, "items": -1}
-        assert rc.redis.llen.call_count is 0
+        assert rc.redis.llen.call_count == 0
+
+    def test_empty_queue(self, redis_client_fixture):
+        rc = redis_client_fixture
+        rc.redis.delete = MagicMock(return_value=1)
+
+        result = rc.empty_queue('compounds')
+        assert result == 1
+        rc.redis.delete.assert_called_once_with('compounds')
 
     def test_consume_queue_happy(self, redis_client_fixture):
         """
@@ -85,6 +90,6 @@ class TestRedisClient:
 
         result = rc.consume_queue("compounds")
 
-        assert json.loads.call_count is 0
+        assert json.loads.call_count == 0
         assert result is None
         mock_print.assert_called_once_with("Nothing on compounds queue")

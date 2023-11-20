@@ -51,8 +51,8 @@ def build():
     list_of_lists = ListUtils.get_lol(studies_list, config.thread_count)
     list_of_lists = list_of_lists[:120] if config.debug is True else list_of_lists
 
-    for l in list_of_lists:
-        ephemera = ataronchronon(accessions=l, session=session, config=config)
+    for lis in list_of_lists:
+        ephemera = ataronchronon(accessions=lis, session=session, config=config)
         for ephemeron in ephemera:
             master_mapping = RefMapOperationsHandler.merge_refmaps(
                 master_mapping, ephemeron
@@ -97,11 +97,13 @@ def ataronchronon(
 ) -> List[RefMapping]:
     """
     Process a sub-list of MTBLS Accessions. Each accession is given to a thread in a ThreadPool, the task for each
-    thread is submitted, and we await the results of each thread before returning the results as a list of RefMapping object
+    thread is submitted, and we await the results of each thread before returning the results as a list of RefMapping
+    objects.
     :param accessions: A List of MTBLS accessions as string IE ['MTBLS1','MTBLS2'...]
     :param session: A requests.Session object.
-    :param config: A MAppingFileBuilderConfig object, to pass to the threads.
-    :return: A List of RefMapping objects, where each one is the output from a single thread having processed an accession.
+    :param config: A MappingFileBuilderConfig object, to pass to the threads.
+    :return: A List of RefMapping objects, where each one is the output from a single thread having processed an
+        accession.
     """
     input_list = [(acc, RefMapping({}, {}, []), session, config) for acc in accessions]
     method_list = [process_accession_wrapper for acc in accessions]
@@ -168,7 +170,7 @@ def process_accession(
         for line in maf_lines["data"]["rows"]:
             db_id = str(line["database_identifier"])
             part = ""
-            if db_id is not "":
+            if db_id != "":
                 species = str(line["species"]) if "species" in line else ""
                 if not has_multiple_organisms:
                     species = organism_data[0]["organismName"]

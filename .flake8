@@ -1,0 +1,30 @@
+[flake8]
+# Exclude virtual environments and other non-relevant directories
+exclude =
+    venv,
+    .venv,
+    etc,
+    .git,
+    __pycache__,
+    build,
+    dist
+
+# Set the maximum line length for your code (PEP8 recommends 79)
+max-line-length = 120
+
+# Select the error and warning codes you want to enforce
+# For example, you could uncomment the following line to only check for unused imports and undefined names
+# select = F401,F821
+
+# Ignore specific error and warning codes
+# E.g., you can uncomment the following line to ignore missing docstring warnings
+ignore = E731,F841,F811
+
+per-file-ignores =
+    compound_dir_builder/build_compound_dir.py: W291, W503, F632
+    tests/maf_chebi_cross_checker_tests/test_checker.py: F401, W503
+    tests/compound_builder_tests/redis_queue_manager_tests/test_redis_queue_manager.py: F401
+    tests/compound_common_tests/transport_client_tests/test_redis_client.py: F401
+
+# Set the maximum complexity allowed in your functions (optional)
+# max-complexity = 10

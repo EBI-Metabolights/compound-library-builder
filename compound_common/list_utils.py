@@ -16,9 +16,9 @@ class ListUtils:
         """
         num_sublists = len(master_list) // count
 
-        result = [master_list[i * count : (i + 1) * count] for i in range(num_sublists)]
+        result = [master_list[i * count: (i + 1) * count] for i in range(num_sublists)]
         if len(master_list) % num_sublists != 0:
-            remaining_items = master_list[num_sublists * count :]
+            remaining_items = master_list[num_sublists * count:]
             result.append(remaining_items)
         return result
 

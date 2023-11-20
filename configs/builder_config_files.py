@@ -22,10 +22,10 @@ class RuntimeFlags(BaseModel):
 
 class CompoundBuilderObjs(BaseModel):
     """
-    A collection of various keys and mappings that the compound_dir_builder refers to. Previously these were scattered global
-    variables, or defined in-method. Hopefully collecting them all here will make understanding this script easier than
-     understanding v1. If these various objects don't make sense in isolation, follow the script flow and they might
-     make some more sense. Also, view a MTBLS1234.json file and that also might shed some light.
+    A collection of various keys and mappings that the compound_dir_builder refers to. Previously these were scattered
+    global variables, or defined in-method. Hopefully collecting them all here will make understanding this script
+    easier to understand than v1. If these various objects don't make sense in isolation, follow the script flow and
+    they might make some more sense. Also, view a MTBLC1234.json file and that also might shed some light.
     """
 
     chebi_ns_map: dict = {
@@ -136,7 +136,8 @@ class MiscUrls(BaseModel):
     wikipathways_api: str = (
         "https://webservice.wikipathways.org/findPathwaysByXref?ids="
     )
-    new_mona_api: str = "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
+    new_mona_api: str = "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists" \
+                        "(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
 
 
 class CompoundBuilderUrls(BaseModel):

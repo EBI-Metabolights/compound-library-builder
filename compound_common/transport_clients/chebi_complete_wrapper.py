@@ -15,7 +15,7 @@ class ChebiCompleteClient:
         try:
             sdf = PandasTools.LoadSDF(loc)
         except Exception as e:
-            logging.exception("A real bad thing happened")
+            logging.exception(f"A real bad thing happened: {str(e)}")
         return sdf
 
     def select_compound(self):

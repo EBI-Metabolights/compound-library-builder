@@ -1,6 +1,4 @@
 import json
-import unittest
-from typing import List
 
 import pytest
 import redis

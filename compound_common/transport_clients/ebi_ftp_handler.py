@@ -40,7 +40,7 @@ class EBIFTPHandler:
         try:
             df = pd.read_csv(buffer, sep="\t")
         except UnicodeDecodeError as e:
-            print(f"{study} isatab file {isatab_file} not able to be decoded.")
+            print(f"{study} isatab file {isatab_file} not able to be decoded: {str(e)}")
         return df
 
     @retry(stop_max_attempt_number=3, wait_fixed=5000)
