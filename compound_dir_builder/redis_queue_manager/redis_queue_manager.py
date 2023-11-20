@@ -21,7 +21,6 @@ class CompoundRedisQueueManager:
 
     def __init__(
         self,
-        config: RedisConfig = None,
         session: requests.Session = None,
         redis_client: RedisClient = None,
         mtbls_ws_config: MtblsWsUrls = MtblsWsUrls(),
@@ -99,7 +98,6 @@ if __name__ == "__main__":
         yaml_data = yaml.safe_load(f)
     config = RedisConfig(**yaml_data)
     CompoundRedisQueueManager(
-        config=config,
         session=requests.Session(),
         redis_client=RedisClient(config=config),
-    )  # .go()
+    ).populate_queue()
