@@ -84,6 +84,14 @@ class CompoundRedisQueueManager:
         compound_chunk = self.redis_client.consume_queue("compounds")
         return ast.literal_eval(compound_chunk)
 
+    def annihilate_queue(self) -> int:
+        """
+        Delete the compounds queue and everything in it.
+        :return: 1 if deleted successfully, 0 otherwise.
+        """
+        result = self.redis_client.empty_queue('compounds')
+        return result
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
