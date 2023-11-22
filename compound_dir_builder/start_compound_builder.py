@@ -26,14 +26,14 @@ def main(args):
     args = parser.parse_args(args)
 
     destination_directory = args.destination
-    ftp = args.ftp
+    ref = args.ref
     using_queue = args.queue
     overall_process_timer = Timer(datetime.datetime.now(), None)
     with open(f"{args.queue_config}", "r") as f:
         yaml_data = yaml.safe_load(f)
     redis_config = RedisConfig(**yaml_data)
 
-    mpm = MappingPersistenceManager(root=ftp, timers_enabled=False)
+    mpm = MappingPersistenceManager(root=ref, timers_enabled=False)
     crqm = CompoundRedisQueueManager(
         session=requests.Session(),
         redis_client=RedisClient(config=redis_config),
