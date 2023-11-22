@@ -40,12 +40,12 @@ class MappingFileBuilderConfig(BaseModel):
     destination: str = ''
 
 
-def build():
+def build(config: MappingFileBuilderConfig):
     """
     Build the mapping reference file.
     :return: N/A, mapping file saved.
     """
-    config = MappingFileBuilderConfig()
+    config = config
     session = requests.Session()
     master_mapping = RefMapping({}, {}, [])
     overall_process_timer = Timer(datetime.datetime.now(), None)
@@ -294,4 +294,4 @@ if __name__ == "__main__":
     with open(f"{args.config}", "r") as f:
         yaml_data = yaml.safe_load(f)
     config = MappingFileBuilderConfig(**yaml_data)
-    build()
+    build(config=config)

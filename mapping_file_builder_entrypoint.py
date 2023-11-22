@@ -16,4 +16,4 @@ args = parser.parse_args(sys.argv[1:])
 with open(f"{args.config}", "r") as f:
     yaml_data = yaml.safe_load(f)
 config = MappingFileBuilderConfig(**yaml_data)
-build()
+build(config=config)
