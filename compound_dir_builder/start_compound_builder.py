@@ -35,7 +35,6 @@ def main(args):
 
     mpm = MappingPersistenceManager(root=ftp, timers_enabled=False)
     crqm = CompoundRedisQueueManager(
-        config=redis_config,
         session=requests.Session(),
         redis_client=RedisClient(config=redis_config),
     )

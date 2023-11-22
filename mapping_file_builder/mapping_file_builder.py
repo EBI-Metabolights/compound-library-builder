@@ -1,10 +1,15 @@
+import argparse
 import concurrent.futures
 import datetime
+import sys
 from dataclasses import dataclass, asdict
 from typing import List
 from enum import Enum, auto
 
 import requests
+import yaml
+
+from pydantic import BaseModel
 
 from compound_common.list_utils import ListUtils
 from compound_common.timer import Timer
@@ -26,12 +31,13 @@ class PersistenceEnum(Enum):
     vanilla = auto()
 
 
-class MappingFileBuilderConfig:
+class MappingFileBuilderConfig(BaseModel):
     mtbls_ws: MtblsWsUrls = MtblsWsUrls()
     timeout: int = 500
     thread_count: int = 6
     debug: bool = False
     pers: PersistenceEnum = PersistenceEnum.msgpack
+    destination: str = ''
 
 
 def build():
@@ -277,4 +283,15 @@ class RefMapOperationsHandler:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Absolute path to the mapping_file_builder.yaml file",
+        default="/Users/cmartin/Projects/compound-directory-builder/.secrets/mapping_file_builder.yaml",
+    )
+    args = parser.parse_args(sys.argv[1:])
+    with open(f"{args.config}", "r") as f:
+        yaml_data = yaml.safe_load(f)
+    config = MappingFileBuilderConfig(**yaml_data)
     build()

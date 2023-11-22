@@ -28,7 +28,7 @@ class ArgParsers:
             default=cal_default_dest,
         )
         parser.add_argument(
-            "-f", "--ftp", action=ReadableDir, default=cal_ftp, help="FTP directory"
+            "-r", "--ref", action=ReadableDir, default=cal_ftp, help="Reference file directory"
         )
         parser.add_argument(
             "-n",
