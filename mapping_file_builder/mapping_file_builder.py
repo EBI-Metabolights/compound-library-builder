@@ -49,7 +49,7 @@ def build():
     session = requests.Session()
     master_mapping = RefMapping({}, {}, [])
     overall_process_timer = Timer(datetime.datetime.now(), None)
-    mpm = MappingPersistenceManager(root="./", timers_enabled=True)
+    mpm = MappingPersistenceManager(root=config.destination, timers_enabled=True)
 
     studies_list = session.get(config.mtbls_ws.metabolights_ws_studies_list).json()[
         "content"
