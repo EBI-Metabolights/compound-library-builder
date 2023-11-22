@@ -71,7 +71,7 @@ class MessagePackClient:
     def save(self, obj, filename) -> Union[None, Timer]:
         timer = Timer(datetime.datetime.now(), None) if self.timers_enabled else None
         packed = msgpack.packb(obj)
-        with open(f"{filename}.bin", "wb") as f:
+        with open(f"{self.root}/{filename}.bin", "wb") as f:
             f.write(packed)
             if timer is not None:
                 timer.end = datetime.datetime.now()
