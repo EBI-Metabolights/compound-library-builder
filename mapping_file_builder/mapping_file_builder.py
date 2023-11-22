@@ -15,7 +15,7 @@ from compound_common.list_utils import ListUtils
 from compound_common.timer import Timer
 from configs.builder_config_files import MtblsWsUrls
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
-from managers.mapping_persistence_manager import MappingPersistenceManager
+from mapping_file_builder.managers.mapping_persistence_manager import MappingPersistenceManager
 
 
 @dataclass
