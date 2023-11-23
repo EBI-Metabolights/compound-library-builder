@@ -3,12 +3,13 @@ import pytest
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
-from configs.transport.redis_config import RedisConfig
+from configs.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
 
 
 @pytest.fixture
 def compound_redis_queue_manager_fixture():
-    crqm = CompoundRedisQueueManager()
+    config = CompoundBuilderRedisConfig()
+    crqm = CompoundRedisQueueManager(compound_builder_redis_config=config)
     yield crqm
     del crqm
 
