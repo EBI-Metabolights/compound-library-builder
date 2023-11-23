@@ -136,8 +136,10 @@ class MiscUrls(BaseModel):
     wikipathways_api: str = (
         "https://webservice.wikipathways.org/findPathwaysByXref?ids="
     )
-    new_mona_api: str = "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists" \
-                        "(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
+    new_mona_api: str = (
+        "https://mona.fiehnlab.ucdavis.edu/rest/spectra/search?query=exists"
+        "(compound.metaData.name%3A'InChIKey'%20and%20compound.metaData.value%3A'{0}')"
+    )
 
 
 class CompoundBuilderUrls(BaseModel):

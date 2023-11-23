@@ -90,12 +90,11 @@ class CompoundRedisQueueManager:
         Delete the compounds queue and everything in it.
         :return: 1 if deleted successfully, 0 otherwise.
         """
-        result = self.redis_client.empty_queue('compounds')
+        result = self.redis_client.empty_queue("compounds")
         return result
 
 
 if __name__ == "__main__":
-
     parser = ArgParsers.compound_queue_parser()
     args = parser.parse_args(sys.argv[1:])
     with open(f"{args.redis_config}", "r") as f:
@@ -104,7 +103,9 @@ if __name__ == "__main__":
 
     with open(f"{args.compound_queue_config}", "r") as qf:
         compound_queue_manager_config_yaml_data = yaml.safe_load(qf)
-    compound_queue_manager_config = CompoundBuilderRedisConfig(**compound_queue_manager_config_yaml_data)
+    compound_queue_manager_config = CompoundBuilderRedisConfig(
+        **compound_queue_manager_config_yaml_data
+    )
 
     CompoundRedisQueueManager(
         compound_builder_redis_config=compound_queue_manager_config,

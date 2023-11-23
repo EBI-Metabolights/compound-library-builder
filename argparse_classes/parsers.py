@@ -28,7 +28,11 @@ class ArgParsers:
             default=cal_default_dest,
         )
         parser.add_argument(
-            "-r", "--ref", action=ReadableDir, default=cal_ftp, help="Reference file directory"
+            "-r",
+            "--ref",
+            action=ReadableDir,
+            default=cal_ftp,
+            help="Reference file directory",
         )
         parser.add_argument(
             "-n",
@@ -52,7 +56,7 @@ class ArgParsers:
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/"
+            default="/Users/cmartin/Projects/compound-directory-builder/",
         )
         return parser
 
@@ -76,7 +80,7 @@ class ArgParsers:
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/"
+            default="/Users/cmartin/Projects/compound-directory-builder/",
         )
         return parser
 
@@ -96,7 +100,6 @@ class ArgParsers:
         )
         return parser
 
-
     @staticmethod
     def redis_config_parser() -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
@@ -107,5 +110,3 @@ class ArgParsers:
             default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
         )
         return parser
-
-

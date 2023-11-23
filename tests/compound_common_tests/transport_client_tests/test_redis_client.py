@@ -64,9 +64,9 @@ class TestRedisClient:
         rc = redis_client_fixture
         rc.redis.delete = MagicMock(return_value=1)
 
-        result = rc.empty_queue('compounds')
+        result = rc.empty_queue("compounds")
         assert result == 1
-        rc.redis.delete.assert_called_once_with('compounds')
+        rc.redis.delete.assert_called_once_with("compounds")
 
     def test_consume_queue_happy(self, redis_client_fixture):
         """

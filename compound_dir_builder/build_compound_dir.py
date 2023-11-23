@@ -181,7 +181,9 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
             f"{config.urls.mtbls.metabolights_ws_compounds_url}{metabolights_id}"
         ).json()["content"]
     except json.JSONDecodeError as e:
-        print(f"Error getting info from MTBLS webservice for compound {chebi_id}: {str(e)}")
+        print(
+            f"Error getting info from MTBLS webservice for compound {chebi_id}: {str(e)}"
+        )
     if mtblcs is None:
         print(f"Exiting compound building process for compound {chebi_id}")
         return {}
@@ -706,7 +708,7 @@ class ExternalAPIHitter:
         for citation in citations:
             val = f'{config.urls.misc_urls.epmc_api}{str(citation["value"])}'
             print(
-                f'attempting to hit {val}&format=json&resultType=core&cursorMark=*&pageSize=25'
+                f"attempting to hit {val}&format=json&resultType=core&cursorMark=*&pageSize=25"
             )
             try:
                 citation_epmc_data = session.get(
@@ -885,10 +887,8 @@ class ExternalAPIHitter:
         :return: dict object representing pathways for particular compound.
         """
         format_params = "&codes=Ik&format=json"
-        val = f'{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}'
-        print(
-            f"Attempting to retrieve wikipathways data from {val}"
-        )
+        val = f"{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"
+        print(f"Attempting to retrieve wikipathways data from {val}")
         final_pathways = {}
         wikipathways = session.get(
             f"{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"

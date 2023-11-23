@@ -6,8 +6,11 @@ import yaml
 
 from argparse_classes.parsers import ArgParsers
 from compound_common.transport_clients.redis_client import RedisClient
-from compound_dir_builder.redis_queue_manager.redis_queue_manager import CompoundRedisQueueManager
+from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
+    CompoundRedisQueueManager,
+)
 from configs.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
+
 
 def main(args):
     parser = ArgParsers.compound_queue_parser()
@@ -19,7 +22,9 @@ def main(args):
 
     with open(f"{args.compound_queue_config}", "r") as qf:
         compound_queue_manager_config_yaml_data = yaml.safe_load(qf)
-    compound_queue_manager_config = CompoundBuilderRedisConfig(**compound_queue_manager_config_yaml_data)
+    compound_queue_manager_config = CompoundBuilderRedisConfig(
+        **compound_queue_manager_config_yaml_data
+    )
 
     CompoundRedisQueueManager(
         compound_builder_redis_config=compound_queue_manager_config,
@@ -28,6 +33,5 @@ def main(args):
     ).populate_queue()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
-

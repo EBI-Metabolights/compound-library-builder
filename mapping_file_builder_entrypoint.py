@@ -7,7 +7,6 @@ from mapping_file_builder.mapping_file_builder import MappingFileBuilderConfig, 
 
 
 def main(args):
-
     parser = ArgParsers.mapping_file_builder_parser()
     args = parser.parse_args(args)
     with open(f"{args.config}", "r") as f:
@@ -16,5 +15,5 @@ def main(args):
     build(config=config)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

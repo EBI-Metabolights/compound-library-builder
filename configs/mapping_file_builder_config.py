@@ -9,4 +9,4 @@ class MappingFileBuilderConfig(BaseModel):
     thread_count: int = 6
     debug: bool = False
     pers: PersistenceEnum = PersistenceEnum.msgpack
-    destination: str = ''
+    destination: str = ""

@@ -11,27 +11,32 @@ from argparse_classes.parsers import ArgParsers
 from compound_common.timer import Timer
 from compound_common.transport_clients.redis_client import RedisClient
 from compound_dir_builder import build_compound_dir
-from compound_dir_builder.redis_queue_manager.redis_queue_manager import CompoundRedisQueueManager
+from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
+    CompoundRedisQueueManager,
+)
 from configs.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
 from function_wrappers.builder_wrappers.debug_harness import compound_debug_harness
-from mapping_file_builder.managers.mapping_persistence_manager import MappingPersistenceManager
+from mapping_file_builder.managers.mapping_persistence_manager import (
+    MappingPersistenceManager,
+)
 
 
 def main(args):
     parser = ArgParsers.compound_builder_parser()
     args = parser.parse_args(args)
     overall_process_timer = Timer(datetime.datetime.now(), None)
-    
+
     with open(f"{args.redis_config}", "r") as f:
         redis_config_yaml_data = yaml.safe_load(f)
     redis_config = RedisConfig(**redis_config_yaml_data)
 
     with open(f"{args.compound_queue_config}", "r") as qf:
         compound_queue_manager_config_yaml_data = yaml.safe_load(qf)
-    compound_queue_manager_config = CompoundBuilderRedisConfig(**compound_queue_manager_config_yaml_data)
+    compound_queue_manager_config = CompoundBuilderRedisConfig(
+        **compound_queue_manager_config_yaml_data
+    )
 
     readout(args, redis_config, compound_queue_manager_config)
-
 
     mpm = MappingPersistenceManager(root=args.ref, timers_enabled=False)
     crqm = CompoundRedisQueueManager(
@@ -54,7 +59,7 @@ def main(args):
             metabolights_id=compound.strip(),
             ml_mapping=ml_mapping,
             reactome_data=reactome_data,
-            data_directory=args.destination
+            data_directory=args.destination,
         )
         current_compound_timer.end = datetime.datetime.now()
         print(f"{compound} processing time: {current_compound_timer.delta()}")
@@ -62,16 +67,16 @@ def main(args):
     overall_process_timer.end = datetime.datetime.now()
     print(f"Time taken for compound building process: {overall_process_timer.delta()}")
 
+
 def readout(*args):
-    print('##########################################################')
-    print('all config values and command line arguments:')
+    print("##########################################################")
+    print("all config values and command line arguments:")
     for arg in args:
         if not isinstance(arg, dict):
             arg = dict(arg)
         for key, value in arg:
             print(f"{key}: {value}")
-    print('##########################################################')
-
+    print("##########################################################")
 
 
 @compound_debug_harness(enabled=True)
