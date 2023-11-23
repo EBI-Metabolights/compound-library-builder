@@ -20,18 +20,21 @@ from function_wrappers.builder_wrappers.debug_harness import compound_debug_harn
 from mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
 )
+from utils.command_line_utils import CommandLineUtils
 from utils.general_file_utils import GeneralFileUtils
 
 
 def main(args):
     parser = ArgParsers.compound_builder_parser()
     args = parser.parse_args(args)
-    overall_process_timer = Timer(datetime.datetime.now(), None)
+    overall_process_timer = Timer(datetime.datetime.now())
 
     redis_config = RedisConfig(**GeneralFileUtils.open_yaml_file(args.redis_config))
-    compound_queue_manager_config = CPRG(**GeneralFileUtils.open_yaml_file(args.compound_queue_config))
+    compound_queue_manager_config = CPRG(
+        **GeneralFileUtils.open_yaml_file(args.compound_queue_config)
+    )
 
-    readout(args, redis_config, compound_queue_manager_config)
+    CommandLineUtils.readout(args, redis_config, compound_queue_manager_config)
 
     mpm = MappingPersistenceManager(root=args.ref, timers_enabled=False)
     crqm = CompoundRedisQueueManager(
@@ -49,7 +52,7 @@ def main(args):
     print(f"Number of compounds received from list: {len(compound_list)}")
     print("compounds: ")
     for compound in compound_list:
-        current_compound_timer = Timer(datetime.datetime.now(), None)
+        current_compound_timer = Timer(datetime.datetime.now())
         # build process returns dict, no use for it in prod but handy when debugging
         __ = execute(
             metabolights_id=compound.strip(),
@@ -62,9 +65,6 @@ def main(args):
 
     overall_process_timer.end = datetime.datetime.now()
     print(f"Time taken for compound building process: {overall_process_timer.delta()}")
-
-
-
 
 
 @compound_debug_harness(enabled=True)

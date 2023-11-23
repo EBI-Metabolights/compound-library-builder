@@ -7,7 +7,7 @@ from typing import Union
 @dataclass
 class Timer:
     start: datetime.datetime
-    end: Union[datetime.datetime, None]
+    end: Union[datetime.datetime, None] = None
 
     def delta(self) -> timedelta:
         result = self.end - self.start

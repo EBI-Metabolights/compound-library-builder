@@ -7,7 +7,6 @@ import yaml
 
 
 class GeneralFileUtils:
-
     @staticmethod
     def save_json_file(filename: str, data: dict) -> None:
         """
@@ -36,6 +35,6 @@ class GeneralFileUtils:
 
     @staticmethod
     def open_yaml_file(path_to_yaml: str) -> Any:
-        with open(path_to_yaml, 'r') as f:
+        with open(path_to_yaml, "r") as f:
             thing = yaml.safe_load(f)
         return thing

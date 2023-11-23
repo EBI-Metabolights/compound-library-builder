@@ -11,7 +11,9 @@ from configs.builder_config_files import (
     CompoundBuilderObjs,
     RuntimeFlags,
 )
-from compound_dir_builder.ancillary_classes.spectra_file_handler import SpectraFileHandler
+from compound_dir_builder.ancillary_classes.spectra_file_handler import (
+    SpectraFileHandler,
+)
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception_angel
 
