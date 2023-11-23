@@ -19,9 +19,11 @@ def main(args):
         print("Available commands: ")
         print("\tpop - pop an item off the queue, and have it printed")
         print('\tpopnlock - pop an item off the queue, and have it printed, and then push it back to the queue')
+        print("\tpush - push an item to the current queue")
         print("\texit - quit the cli")
         print("\tset - set the current queue. Usage: set {queue_name}")
         print("\tlen - get length of current queue")
+        print("\tevac - delete current queue and its contents")
         command = input("Enter command: ")
         if command == "exit":
             break
@@ -31,6 +33,9 @@ def main(args):
                 result = ast.literal_eval(result)
                 print(f"Number of things in queue item: {len(result)}")
             print(str(result))
+        if "push" in command:
+            result = rc.push_to_queue(current_queue, command.split(" ")[1:])
+            print(f'Push to {current_queue} result: {result}')
         if command == "popnlock":
             result = rc.consume_queue(current_queue)
             result = ast.literal_eval(result)
@@ -42,6 +47,9 @@ def main(args):
             print(f"queue set to {current_queue}")
         if command == "len":
             print(rc.check_queue_exists(current_queue))
+        if command == 'evac':
+            result = rc.empty_queue(current_queue)
+            print(f'Evac result: [{result}].')
 
 
 
