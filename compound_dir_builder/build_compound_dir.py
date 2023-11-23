@@ -11,7 +11,7 @@ from configs.builder_config_files import (
     CompoundBuilderObjs,
     RuntimeFlags,
 )
-from compound_dir_builder.ancillary_classes.file_handler import _FileHandler
+from compound_dir_builder.ancillary_classes.spectra_file_handler import SpectraFileHandler
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception_angel
 
@@ -21,6 +21,8 @@ from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception
 #                            Multi-Stage Compound Reference Layer Building Script                                      #
 #                                                                                                                      #
 ########################################################################################################################
+from utils.command_line_utils import CommandLineUtils
+from utils.general_file_utils import GeneralFileUtils
 
 """
 This script performs multiple stages of building up an MTBLC compound directory. When run for all MTBLC ID's, the 
@@ -276,7 +278,7 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
         for d in mementos:
             print(d.values())
 
-    _FileHandler.save_json_file(
+    GeneralFileUtils.save_json_file(
         f"{data_directory}/{metabolights_id}/{metabolights_id}_data.json", compound_dict
     )
     return compound_dict
@@ -293,7 +295,6 @@ def ataronchronon(
     Configure a ThreadPoolExecutor, and instruct each thread to execute a different external API related task.
     The threads for each task will only start if the corresponding flag is enabled. The RuntimeFlags object starts
     with all flags enabled by default.
-    :param ml_compound_dict: The in-progress MTBLC compound dict.
     :param chebi_compound_dict: compound dict built from results of chebi API response earlier in compound building.
     :param config: CompoundBuilderConfig object.
     :param session: Session object, shared among threads, to make http calls.
@@ -387,7 +388,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
     :param id: chebi ID that we want all their information on.
     :param ml_mapping: mapping object that links studies to chebi ID's and species.
     :param config: CompoundBuilderConfig instance.
-    :param ml_mapping: The mapping file, which associates studies to compound ids referenced in that study.
+    :param session: requests.Session initialised object.
 
     :return: dict representing the information held in chebi on a particular compound.
     """
@@ -402,7 +403,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
     )
 
     # log out the ID so we know it's a valid 'un
-    _InternalUtils.gimme_line()
+    CommandLineUtils.print_line_of_token()
     print(root.find("{https://www.ebi.ac.uk/webservices/chebi}chebiId").text)
 
     # generate the 'basic' dict.
@@ -860,7 +861,7 @@ class ExternalAPIHitter:
                     }
                     ml_spectra["attributes"].append(temp_attribute)
             ml_spectrum.append(ml_spectra)
-            _FileHandler.save_spectra(
+            SpectraFileHandler.save_spectra(
                 str(spectra["id"]), spectra["spectrum"], mtbls_id, dest
             )
         return ml_spectrum
@@ -1160,17 +1161,11 @@ class _InternalUtils:
         :param metabolights_id: The current accession ID.
         :return: None
         """
-        _InternalUtils.gimme_line()
+        CommandLineUtils.print_line_of_token()
         print("Compound ID: " + metabolights_id)
-        _InternalUtils.gimme_line()
+        CommandLineUtils.print_line_of_token()
         print("Process started: " + metabolights_id)
         print("Requesting compound chemical information from ChEBI:")
-
-    @staticmethod
-    def gimme_line():
-        print(
-            "-----------------------------------------------------------------------------------------------------"
-        )
 
     @staticmethod
     def pascal_case(string: str) -> str:

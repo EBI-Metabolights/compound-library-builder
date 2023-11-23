@@ -14,11 +14,13 @@ from compound_dir_builder import build_compound_dir
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
-from configs.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
+from configs.transport.redis_config import RedisConfig
+from configs.transport.redis_config import CompoundBuilderRedisConfig as CPRG
 from function_wrappers.builder_wrappers.debug_harness import compound_debug_harness
 from mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
 )
+from utils.general_file_utils import GeneralFileUtils
 
 
 def main(args):
@@ -26,15 +28,8 @@ def main(args):
     args = parser.parse_args(args)
     overall_process_timer = Timer(datetime.datetime.now(), None)
 
-    with open(f"{args.redis_config}", "r") as f:
-        redis_config_yaml_data = yaml.safe_load(f)
-    redis_config = RedisConfig(**redis_config_yaml_data)
-
-    with open(f"{args.compound_queue_config}", "r") as qf:
-        compound_queue_manager_config_yaml_data = yaml.safe_load(qf)
-    compound_queue_manager_config = CompoundBuilderRedisConfig(
-        **compound_queue_manager_config_yaml_data
-    )
+    redis_config = RedisConfig(**GeneralFileUtils.open_yaml_file(args.redis_config))
+    compound_queue_manager_config = CPRG(**GeneralFileUtils.open_yaml_file(args.compound_queue_config))
 
     readout(args, redis_config, compound_queue_manager_config)
 
@@ -51,7 +46,8 @@ def main(args):
     # If we are using the redis queue, pop a chunk of compound IDs from the queue, otherwise get the full list
     compound_list = crqm.consume_queue() if args.queue else crqm.get_compounds_ids()
     # TODO: Re implement new compounds only
-    print("Number of compounds received from list: {len(compound_list)}")
+    print(f"Number of compounds received from list: {len(compound_list)}")
+    print("compounds: ")
     for compound in compound_list:
         current_compound_timer = Timer(datetime.datetime.now(), None)
         # build process returns dict, no use for it in prod but handy when debugging
@@ -68,15 +64,7 @@ def main(args):
     print(f"Time taken for compound building process: {overall_process_timer.delta()}")
 
 
-def readout(*args):
-    print("##########################################################")
-    print("all config values and command line arguments:")
-    for arg in args:
-        if not isinstance(arg, dict):
-            arg = dict(arg)
-        for key, value in arg:
-            print(f"{key}: {value}")
-    print("##########################################################")
+
 
 
 @compound_debug_harness(enabled=True)

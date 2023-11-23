@@ -1,10 +1,10 @@
-import errno
-import json
+
 import math
-import os
+
+from utils.general_file_utils import GeneralFileUtils
 
 
-class _FileHandler:
+class SpectraFileHandler:
     @staticmethod
     def save_spectra(spectra_id, spectra_data, mtbls_id, destination) -> None:
         """
@@ -35,30 +35,4 @@ class _FileHandler:
             ml_spectrum["peaks"].append(temp_peak)
             mz_array.append(float(temp_peak["mz"]))
         ml_spectrum.update({"mzStart": min(mz_array), "mzStop": max(mz_array)})
-        _FileHandler.save_json_file(final_destination, ml_spectrum)
-
-    @staticmethod
-    def save_json_file(filename: str, data: dict) -> None:
-        """
-        Dump a given dict as a .json file. Check first that the directory we want to save to exists, and if it doesn't,
-        create it.
-        :param filename: string representation of the full path of the .json file to be.
-        :param data: dict to be saved as a .json file
-        :return: None
-        """
-        print(f"Attempting to save {filename}")
-        if not os.path.exists(os.path.dirname(filename)):
-            try:
-                os.makedirs(os.path.dirname(filename))
-            except OSError as exc:
-                if exc.errno != errno.EEXIST:
-                    raise
-        with open(filename, "w") as fp:
-            try:
-                json.dump(data, fp)
-            except json.decoder.JSONDecodeError as e:
-                print("what the hell " + str(e))
-        if os.path.exists(filename):
-            print(f"Successfully saved {filename}")
-        else:
-            print(f"Failed to save {filename}")
+        GeneralFileUtils.save_json_file(final_destination, ml_spectrum)
