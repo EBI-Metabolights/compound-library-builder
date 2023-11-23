@@ -43,10 +43,16 @@ class ArgParsers:
             help="Instruct compound_dir_builder to consume from queue",
         )
         parser.add_argument(
-            "-qc",
-            "--queue_config",
+            "-rc",
+            "--redis_config",
             default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
             help="location of redis.yaml file",
+        )
+        parser.add_argument(
+            "-qc",
+            "--compound_queue_config",
+            help="Absolute path to the config file for the compound queue",
+            default="/Users/cmartin/Projects/compound-directory-builder/"
         )
         return parser
 
@@ -89,4 +95,17 @@ class ArgParsers:
             default="/Users/cmartin/Projects/compound-directory-builder/.secrets/mapping_file_builder.yaml",
         )
         return parser
+
+
+    @staticmethod
+    def redis_config_parser() -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-rc",
+            "--redis_config",
+            help="Absolute path to redis config.yaml file",
+            default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+        )
+        return parser
+
 
