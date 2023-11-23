@@ -1,6 +1,5 @@
 from argparse import Namespace
 
-
 class CommandLineUtils:
     """
     Collection of static command line related methods.
@@ -31,13 +30,14 @@ class CommandLineUtils:
         :param args: Iterable objects or dict objects.
         :return: N/A prints contents of args
         """
+
         CommandLineUtils.print_line_of_token("#")
-        print("all config values and command line arguments:")
+        print("All config values and command line arguments:")
         for arg in args:
             if isinstance(arg, Namespace):
                 arg = vars(arg)
             if not isinstance(arg, dict):
                 arg = dict(arg)
-            for key, value in arg:
+            for key, value in arg.items():
                 print(f"{key}: {value}")
         CommandLineUtils.print_line_of_token("#")
