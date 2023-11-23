@@ -2,42 +2,18 @@ import argparse
 import concurrent.futures
 import datetime
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 from typing import List
-from enum import Enum, auto
 
 import requests
 import yaml
 
-from pydantic import BaseModel
-
 from compound_common.list_utils import ListUtils
 from compound_common.timer import Timer
-from configs.builder_config_files import MtblsWsUrls
+from configs.mapping_file_builder_config import MappingFileBuilderConfig
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from mapping_file_builder.managers.mapping_persistence_manager import MappingPersistenceManager
-
-
-@dataclass
-class RefMapping:
-    study_mapping: dict
-    compound_mapping: dict
-    species_list: List[str]
-
-
-class PersistenceEnum(Enum):
-    pickle = auto()
-    msgpack = auto()
-    vanilla = auto()
-
-
-class MappingFileBuilderConfig(BaseModel):
-    mtbls_ws: MtblsWsUrls = MtblsWsUrls()
-    timeout: int = 500
-    thread_count: int = 6
-    debug: bool = False
-    pers: PersistenceEnum = PersistenceEnum.msgpack
-    destination: str = ''
+from mapping_file_builder.ref_mapping.ref_mapping import RefMapping
 
 
 def build(config: MappingFileBuilderConfig):

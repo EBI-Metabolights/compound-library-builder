@@ -8,8 +8,7 @@ from configs.transport.redis_config import RedisConfig
 
 @pytest.fixture
 def compound_redis_queue_manager_fixture():
-    redis_config = RedisConfig(db=0, port=123, host="nohost", decode_responses=False)
-    crqm = CompoundRedisQueueManager(config=redis_config)
+    crqm = CompoundRedisQueueManager()
     yield crqm
     del crqm
 

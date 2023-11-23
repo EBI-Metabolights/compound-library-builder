@@ -6,6 +6,7 @@ from typing import List
 import yaml
 import requests
 
+from argparse_classes.parsers import ArgParsers
 from compound_common.dir_utils import DirUtils
 from compound_common.list_utils import ListUtils
 from compound_common.transport_clients.redis_client import RedisClient
@@ -21,10 +22,10 @@ class CompoundRedisQueueManager:
 
     def __init__(
         self,
+        compound_builder_redis_config: CompoundBuilderRedisConfig,
         session: requests.Session = None,
         redis_client: RedisClient = None,
         mtbls_ws_config: MtblsWsUrls = MtblsWsUrls(),
-        compound_builder_redis_config: CompoundBuilderRedisConfig = CompoundBuilderRedisConfig(),
     ):
         self.redis_client = redis_client
         self.mtbls_ws_config = mtbls_ws_config
@@ -94,18 +95,19 @@ class CompoundRedisQueueManager:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-c",
-        "--config",
-        help="Absolute path to redis config.yaml file",
-        default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
-    )
+
+    parser = ArgParsers.compound_queue_parser()
     args = parser.parse_args(sys.argv[1:])
-    with open(f"{args.config}", "r") as f:
-        yaml_data = yaml.safe_load(f)
-    config = RedisConfig(**yaml_data)
+    with open(f"{args.redis_config}", "r") as f:
+        redis_config_yaml_data = yaml.safe_load(f)
+    redis_client_config = RedisConfig(**redis_config_yaml_data)
+
+    with open(f"{args.compound_queue_config}", "r") as qf:
+        compound_queue_manager_config_yaml_data = yaml.safe_load(qf)
+    compound_queue_manager_config = CompoundBuilderRedisConfig(**compound_queue_manager_config_yaml_data)
+
     CompoundRedisQueueManager(
+        compound_builder_redis_config=compound_queue_manager_config,
         session=requests.Session(),
-        redis_client=RedisClient(config=config),
+        redis_client=RedisClient(config=redis_client_config),
     ).populate_queue()
