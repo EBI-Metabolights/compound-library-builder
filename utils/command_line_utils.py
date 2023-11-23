@@ -1,3 +1,6 @@
+from argparse import Namespace
+
+
 class CommandLineUtils:
     @staticmethod
     def print_line_of_token(token: str = "_"):
@@ -16,6 +19,8 @@ class CommandLineUtils:
         CommandLineUtils.print_line_of_token("#")
         print("all config values and command line arguments:")
         for arg in args:
+            if isinstance(arg, Namespace):
+                arg = vars(arg)
             if not isinstance(arg, dict):
                 arg = dict(arg)
             for key, value in arg:
