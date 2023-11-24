@@ -1,6 +1,9 @@
-from configs.builder_config_files import MtblsWsUrls
-from mapping_file_builder.mapping_file_builder import PersistenceEnum
+from config_classes.builder_config_files import MtblsWsUrls
 from pydantic import BaseModel
+
+from reference_file_builders.mapping_file_builder.mapping_file_builder_enums import (
+    PersistenceEnum,
+)
 
 
 class MappingFileBuilderConfig(BaseModel):

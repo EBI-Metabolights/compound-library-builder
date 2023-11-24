@@ -56,7 +56,7 @@ class ArgParsers:
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/.configs/compound_queue.yaml",
+            default="/Users/cmartin/Projects/compound-directory-builder/.config_classes/compound_queue.yaml",
         )
         return parser
 
@@ -108,5 +108,16 @@ class ArgParsers:
             "--redis_config",
             help="Absolute path to redis config.yaml file",
             default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+        )
+        return parser
+
+    @staticmethod
+    def reactome_parser() -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-c",
+            "--reactome_config",
+            help="Absolute path to reactome builder confing .yaml file",
+            default="/Users/cmartin/Projects/compound-directory-builder/.configs/reactome_builder_config.yaml",
         )
         return parser

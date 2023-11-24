@@ -3,7 +3,8 @@ import sys
 import yaml
 
 from argparse_classes.parsers import ArgParsers
-from mapping_file_builder.mapping_file_builder import MappingFileBuilderConfig, build
+from config_classes.mapping_file_builder_config import MappingFileBuilderConfig
+from reference_file_builders.mapping_file_builder.mapping_file_builder import build
 
 
 def main(args):

@@ -1,5 +1,6 @@
 from argparse import Namespace
 
+
 class CommandLineUtils:
     """
     Collection of static command line related methods.

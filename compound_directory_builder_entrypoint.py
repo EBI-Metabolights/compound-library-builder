@@ -4,7 +4,6 @@ Warning! this script will fail unless it has its requirements.txt requirements i
 import datetime
 import sys
 
-import yaml
 import requests
 
 from argparse_classes.parsers import ArgParsers
@@ -14,10 +13,10 @@ from compound_dir_builder import build_compound_dir
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
-from configs.transport.redis_config import RedisConfig
-from configs.transport.redis_config import CompoundBuilderRedisConfig as CPRG
+from config_classes.transport.redis_config import RedisConfig
+from config_classes.transport.redis_config import CompoundBuilderRedisConfig as CPRG
 from function_wrappers.builder_wrappers.debug_harness import compound_debug_harness
-from mapping_file_builder.managers.mapping_persistence_manager import (
+from reference_file_builders.mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
 )
 from utils.command_line_utils import CommandLineUtils
