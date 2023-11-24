@@ -1,7 +1,7 @@
 import pytest
 
 from compound_common.transport_clients.redis_client import RedisClient
-from configs.transport.redis_config import RedisConfig
+from config_classes.transport.redis_config import RedisConfig
 
 
 @pytest.fixture

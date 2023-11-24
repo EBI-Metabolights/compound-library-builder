@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Union
 
-from configs.transport.redis_config import RedisConfig
+from config_classes.transport.redis_config import RedisConfig
 import redis
 
 

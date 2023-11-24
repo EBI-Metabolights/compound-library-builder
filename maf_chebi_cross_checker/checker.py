@@ -12,7 +12,7 @@ import pandas as pd
 from compound_common.transport_clients.ebi_ftp_handler import EBIFTPHandler
 from compound_common.doc_clients.xml_utils import XmlResponseUtils
 from compound_common.doc_clients.jinja_wrapper import JinjaWrapper
-from configs.ftp_config import FTPConfig
+from config_classes.ftp_config import FTPConfig
 from maf_chebi_cross_checker.checker_dataclasses import (
     OverviewMetrics,
     IDWatchdog,

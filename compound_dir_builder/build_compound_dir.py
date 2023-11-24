@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from requests import Session
 
 
-from configs.builder_config_files import (
+from config_classes.builder_config_files import (
     CompoundBuilderConfig,
     CompoundBuilderObjs,
     RuntimeFlags,
@@ -16,15 +16,15 @@ from compound_dir_builder.ancillary_classes.spectra_file_handler import (
 )
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from function_wrappers.builder_wrappers.xml_exception_angel import xml_exception_angel
-
+from utils.command_line_utils import CommandLineUtils
+from utils.general_file_utils import GeneralFileUtils
 
 ########################################################################################################################
 #                                                                                                                      #
 #                            Multi-Stage Compound Reference Layer Building Script                                      #
 #                                                                                                                      #
 ########################################################################################################################
-from utils.command_line_utils import CommandLineUtils
-from utils.general_file_utils import GeneralFileUtils
+
 
 """
 This script performs multiple stages of building up an MTBLC compound directory. When run for all MTBLC ID's, the 

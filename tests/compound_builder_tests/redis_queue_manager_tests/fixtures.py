@@ -3,7 +3,7 @@ import pytest
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
-from configs.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
+from config_classes.transport.redis_config import CompoundBuilderRedisConfig
 
 
 @pytest.fixture
