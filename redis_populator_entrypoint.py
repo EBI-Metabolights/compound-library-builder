@@ -8,7 +8,10 @@ from compound_common.transport_clients.redis_client import RedisClient
 from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
-from config_classes.transport.redis_config import RedisConfig, CompoundBuilderRedisConfig
+from config_classes.transport.redis_config import (
+    RedisConfig,
+    CompoundBuilderRedisConfig,
+)
 
 
 def main(args):

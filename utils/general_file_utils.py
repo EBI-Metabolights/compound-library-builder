@@ -7,6 +7,10 @@ import yaml
 
 
 class GeneralFileUtils:
+    """
+    Collection of general file read write methods.
+    """
+
     @staticmethod
     def save_json_file(filename: str, data: dict) -> None:
         """
@@ -35,6 +39,11 @@ class GeneralFileUtils:
 
     @staticmethod
     def open_yaml_file(path_to_yaml: str) -> Any:
+        """
+        Open a given yaml file.
+        :param path_to_yaml: Absolute path to given yaml file.
+        :return: Loaded yaml file, likely as a dict.
+        """
         with open(path_to_yaml, "r") as f:
             thing = yaml.safe_load(f)
         return thing

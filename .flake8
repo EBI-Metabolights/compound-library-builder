@@ -25,6 +25,10 @@ per-file-ignores =
     tests/maf_chebi_cross_checker_tests/test_checker.py: F401, W503
     tests/compound_builder_tests/redis_queue_manager_tests/test_redis_queue_manager.py: F401
     tests/compound_common_tests/transport_client_tests/test_redis_client.py: F401
+    tests/reference_file_builders_tests/reactome_builder_tests/fixtures.py: E501
+    tests/reference_file_builders_tests/test_reactome_file_builder.py: F401
+    compound_common/list_utils.py: E203
+
 
 # Set the maximum complexity allowed in your functions (optional)
 # max-complexity = 10

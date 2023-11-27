@@ -2,7 +2,9 @@ import sys
 
 from argparse_classes.parsers import ArgParsers
 from config_classes.reactome_builder_config import ReactomeFileBuilderConfig
-from reference_file_builders.reactome_file_builder.reactome_file_builder import build
+from reference_file_builders.reactome_file_builder.reactome_file_builder import (
+    ReactomeFileBuilder,
+)
 from utils.general_file_utils import GeneralFileUtils
 
 
@@ -12,7 +14,8 @@ def main(args):
     reactome_config = ReactomeFileBuilderConfig(
         **GeneralFileUtils.open_yaml_file(args.reactome_config)
     )
-    build(reactome_config)
+    rfb = ReactomeFileBuilder(config=reactome_config)
+    __ = rfb.build()
 
 
 if __name__ == "__main__":

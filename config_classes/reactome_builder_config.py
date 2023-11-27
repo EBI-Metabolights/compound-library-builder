@@ -1,10 +1,8 @@
 from pydantic import BaseModel
 
-from config_classes.builder_config_files import MiscUrls
-
 
 class ReactomeFileBuilderConfig(BaseModel):
-    url: str = MiscUrls.reactome_url
+    url: str = "http://www.reactome.org/download/current/ChEBI2Reactome.txt"
     destination: str
     reactome_keys_map: dict = {
         "reactomeId": 1,

@@ -18,8 +18,9 @@ from maf_chebi_cross_checker.checker_dataclasses import (
     IDWatchdog,
     IDRegistry,
 )
+
 from function_wrappers.checker_wrappers.file_write_exception_angel import (
-    file_write_exception_angel,
+    file_rw_exception_angel,
 )
 
 
@@ -291,7 +292,7 @@ class Checker:
             if dud in identifier:
                 return True
 
-    @file_write_exception_angel
+    @file_rw_exception_angel
     def save_report(
         self,
         maf_registry: IDRegistry,
@@ -326,7 +327,7 @@ class Checker:
         with open(f"{self.output_location}report.txt", "w") as report_file:
             report_file.write(rendered_report)
 
-    @file_write_exception_angel
+    @file_rw_exception_angel
     def save_primary_maf_ids(self, registry: IDRegistry, name: str) -> None:
         """
         Write a bunch of primary IDs to text file for later use.
