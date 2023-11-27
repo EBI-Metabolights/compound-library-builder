@@ -6,7 +6,7 @@ import yaml
 
 from argparse_classes.parsers import ArgParsers
 from compound_common.transport_clients.redis_client import RedisClient
-from configs.transport.redis_config import RedisConfig
+from config_classes.transport.redis_config import RedisConfig
 
 
 def main(args):
@@ -32,7 +32,7 @@ def main(args):
             break
         if command == "all":
             for key in rc.redis.keys('*'):
-                print(key.decode('utf-8'))
+                print(key)
         if command == "pop":
             result = rc.consume_queue(current_queue)
             if current_queue == "compounds":
@@ -50,7 +50,7 @@ def main(args):
             rc.push_to_queue(current_queue, json.dumps(result))
         if "set" in command:
             current_queue = command.split(" ")[1]
-            print(f"queue set to {current_queue}")
+            print(f"Queue set to {current_queue}")
         if command == "len":
             print(rc.check_queue_exists(current_queue))
         if command == "evac":
