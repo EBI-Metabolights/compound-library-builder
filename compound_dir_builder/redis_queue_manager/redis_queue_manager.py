@@ -41,7 +41,7 @@ class CompoundRedisQueueManager:
         giving those chunks to the _push_compound_ids_to_redis method.
         :return: None
         """
-        if self.redis_client.check_queue_exists("compounds")["items"] > 0:
+        if self.redis_client.check_queue_exists(self.cbrc.name)["items"] > 0:
             print("Queue populated. Risk of duplication. Aborting.")
             return
         compounds = self.get_compounds_ids()
@@ -56,12 +56,12 @@ class CompoundRedisQueueManager:
         """
         sublist_index, success = 0, 0
         for lis in chunked_compound_lists:
-            resp = self.redis_client.push_to_queue("compounds", json.dumps(lis))
+            resp = self.redis_client.push_to_queue(self.cbrc.name, json.dumps(lis))
             if resp is not None:
                 success += 1
-                print(f"Pushed sublist {sublist_index} to queue")
+                print(f"Pushed sublist {sublist_index} to {self.cbrc.name} queue")
             else:
-                print(f"Unable to push sublist {sublist_index} to compound queue")
+                print(f"Unable to push sublist {sublist_index} to {self.cbrc.name} queue")
             sublist_index += 1
 
     @http_exception_angel
@@ -84,7 +84,7 @@ class CompoundRedisQueueManager:
         evaluate back as a proper List.
         :return: List of compound ids.
         """
-        compound_chunk = self.redis_client.consume_queue("compounds")
+        compound_chunk = self.redis_client.consume_queue(self.cbrc.name)
         return ast.literal_eval(compound_chunk)
 
     def annihilate_queue(self) -> int:
@@ -92,7 +92,7 @@ class CompoundRedisQueueManager:
         Delete the compounds queue and everything in it.
         :return: 1 if deleted successfully, 0 otherwise.
         """
-        result = self.redis_client.empty_queue("compounds")
+        result = self.redis_client.empty_queue(self.cbrc.name)
         return result
 
 

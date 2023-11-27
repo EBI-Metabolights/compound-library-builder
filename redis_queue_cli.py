@@ -17,6 +17,7 @@ def main(args):
     while True:
         print(f"Current queue is: {current_queue}")
         print("Available commands: ")
+        print("\tall - list all queues in redis")
         print("\tpop - pop an item off the queue, and have it printed")
         print(
             "\tpopnlock - pop an item off the queue, and have it printed, and then push it back to the queue"
@@ -29,6 +30,9 @@ def main(args):
         command = input("Enter command: ")
         if command == "exit":
             break
+        if command == "all":
+            for key in rc.redis.keys('*'):
+                print(key.decode('utf-8'))
         if command == "pop":
             result = rc.consume_queue(current_queue)
             if current_queue == "compounds":

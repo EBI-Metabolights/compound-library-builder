@@ -23,3 +23,4 @@ class CompoundBuilderRedisConfig(BaseModel):
 
     chunk_size: int = 200
     new_compounds_only: bool = False
+    name: str

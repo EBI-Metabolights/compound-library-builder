@@ -9,3 +9,4 @@ PyYAML
 black
 flake8
 msgpack
+pytest-cov
