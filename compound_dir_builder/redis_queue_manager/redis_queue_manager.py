@@ -42,7 +42,8 @@ class CompoundRedisQueueManager:
         :return: None
         """
         if self.redis_client.check_queue_exists(self.cbrc.name)["items"] > 0:
-            print("Queue populated. Risk of duplication. Aborting.")
+            print("Queue populated. Risk of duplication. Evacuating Queue.")
+            self.redis_client.empty_queue(self.cbrc.name)
             return
         compounds = self.get_compounds_ids()
         chunked = ListUtils.get_lol(compounds, self.cbrc.chunk_size)
