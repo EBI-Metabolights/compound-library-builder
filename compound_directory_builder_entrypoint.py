@@ -81,7 +81,7 @@ def process_compounds(compound_list, ml_mapping, reactome_data, data_directory):
         print(f"{compound} processing time: {current_compound_timer.delta()}")
 
 # TODO: make enabled configurable
-@compound_debug_harness(enabled=False)
+@compound_debug_harness(enabled=True)
 def execute(
     metabolights_id: str, ml_mapping: dict, reactome_data: dict, data_directory: str
 ):
