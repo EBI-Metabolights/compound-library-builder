@@ -397,6 +397,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
     """This request needs to be made first, as the rest of the other API calls depend on it's response."""
 
     chebi_response = session.get(f"{config.urls.misc_urls.chebi_api}{id}").content
+    print(chebi_response)
     root = (
         ET.fromstring(chebi_response)
         .find("envelop:Body", namespaces=config.objs.chebi_ns_map)
@@ -840,6 +841,8 @@ class ExternalAPIHitter:
         response = session.get(
             f"{config.urls.misc_urls.new_mona_api.format(inchi_key)}"
         )
+        if response.status_code not in [200, 201, 202, 203]:
+            return ml_spectrum
         result = response.json()
         for spectra in result:
             ml_spectra = {

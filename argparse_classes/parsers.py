@@ -56,7 +56,7 @@ class ArgParsers:
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/.config_classes/compound_queue.yaml",
+            default="/Users/cmartin/Projects/compound-directory-builder/.configs/quarterly.yaml",
         )
         return parser
 
@@ -80,7 +80,7 @@ class ArgParsers:
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/",
+            default="/Users/cmartin/Projects/compound-directory-builder/.configs/quarterly.yaml",
         )
         return parser
 
