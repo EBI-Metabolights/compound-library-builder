@@ -38,13 +38,13 @@ class ArgParsers:
             "-n",
             "--new_compounds_only",
             action="store_true",
-            help="whether to only run the compound_dir_builder for new chebi entries",
+            help="whether to only run the compound_library_builder for new chebi entries",
         )
         parser.add_argument(
             "-q",
             "--queue",
             action="store_true",
-            help="Instruct compound_dir_builder to consume from queue",
+            help="Instruct compound_library_builder to consume from queue",
         )
         parser.add_argument(
             "-rc",

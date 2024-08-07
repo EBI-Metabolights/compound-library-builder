@@ -22,7 +22,7 @@ class RuntimeFlags(BaseModel):
 
 class CompoundBuilderObjs(BaseModel):
     """
-    A collection of various keys and mappings that the compound_dir_builder refers to. Previously these were scattered
+    A collection of various keys and mappings that the compound_library_builder refers to. Previously these were scattered
     global variables, or defined in-method. Hopefully collecting them all here will make understanding this script
     easier to understand than v1. If these various objects don't make sense in isolation, follow the script flow and
     they might make some more sense. Also, view a MTBLC1234.json file and that also might shed some light.

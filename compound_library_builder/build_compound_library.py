@@ -11,7 +11,7 @@ from config_classes.builder_config_files import (
     CompoundBuilderObjs,
     RuntimeFlags,
 )
-from compound_dir_builder.ancillary_classes.spectra_file_handler import (
+from compound_library_builder.ancillary_classes.spectra_file_handler import (
     SpectraFileHandler,
 )
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
@@ -50,7 +50,7 @@ Parameters:
 
 Stages:
     Stage 1: Initialisation 
-        This stage prepares several objects needed for the compound_dir_builder to run. These are:
+        This stage prepares several objects needed for the compound_library_builder to run. These are:
             - CompoundBuilderConfig object, which contains all internal & external API endpoints, as well as keys and 
             maps used to translate API responses to our format.
             - Session object for quicker http requests, shared among threads.
@@ -163,7 +163,7 @@ Output:
 """
 
 
-def build(metabolights_id, ml_mapping, reactome_data, data_directory):
+def build_compound(metabolights_id, ml_mapping, reactome_data, data_directory):
     """
     Entrypoint method for the script, to build an MTBLC compound directory.
 

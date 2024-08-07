@@ -9,8 +9,8 @@ import requests
 from argparse_classes.parsers import ArgParsers
 from compound_common.timer import Timer
 from compound_common.transport_clients.redis_client import RedisClient
-from compound_dir_builder import build_compound_dir
-from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
+from compound_library_builder import build_compound_library
+from compound_library_builder.redis_queue_manager.redis_queue_manager import (
     CompoundRedisQueueManager,
 )
 from config_classes.transport.redis_config import RedisConfig
@@ -21,7 +21,6 @@ from reference_file_builders.mapping_file_builder.managers.mapping_persistence_m
 )
 from utils.command_line_utils import CommandLineUtils
 from utils.general_file_utils import GeneralFileUtils
-
 
 
 def main(args):
@@ -85,7 +84,7 @@ def process_compounds(compound_list, ml_mapping, reactome_data, data_directory):
 def execute(
     metabolights_id: str, ml_mapping: dict, reactome_data: dict, data_directory: str
 ):
-    result = build_compound_dir.build(
+    result = build_compound_library.build_compound(
         metabolights_id=metabolights_id.strip(),
         ml_mapping=ml_mapping,
         reactome_data=reactome_data,
