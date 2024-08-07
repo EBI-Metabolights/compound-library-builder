@@ -10,7 +10,7 @@ import yaml
 
 from compound_common.list_utils import ListUtils
 from compound_common.timer import Timer
-from configs.mapping_file_builder_config import MappingFileBuilderConfig
+from config_classes.mapping_file_builder_config import MappingFileBuilderConfig
 from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from reference_file_builders.mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
@@ -268,7 +268,7 @@ if __name__ == "__main__":
         "-c",
         "--config",
         help="Absolute path to the mapping_file_builder.yaml file",
-        default="/Users/cmartin/Projects/compound-directory-builder/.secrets/mapping_file_builder.yaml",
+        default="/Users/cmartin/Projects/compound-library-builder/.secrets/mapping_file_builder.yaml",
     )
     args = parser.parse_args(sys.argv[1:])
     with open(f"{args.config}", "r") as f:

@@ -123,6 +123,9 @@ class KeggUrls(BaseModel):
     kegg_pathways_list_api: str = "http://rest.kegg.jp/link/pathway/"
     kegg_pathway_api: str = "http://rest.kegg.jp/get/"
 
+class WikipathwaysConfig(BaseModel):
+    pathways_by_x_ref: str = 'https://webservice.wikipathways.org/findPathwaysByXref?ids='
+    xref_query_params: str = '&codes=Ce&format=json'
 
 class MiscUrls(BaseModel):
     chebi_api: str = (

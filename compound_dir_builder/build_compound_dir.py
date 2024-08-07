@@ -240,7 +240,7 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
         }
     )
 
-    mementos = ataronchronon(
+    mementos = configure_thread_pool_and_execute_tasks(
         chebi_compound_dict=chebi_dict,
         config=config,
         session=session,
@@ -286,7 +286,7 @@ def build(metabolights_id, ml_mapping, reactome_data, data_directory):
     return compound_dict
 
 
-def ataronchronon(
+def configure_thread_pool_and_execute_tasks(
     chebi_compound_dict: dict,
     config: CompoundBuilderConfig,
     session: Session,
@@ -325,7 +325,7 @@ def ataronchronon(
         config,
         session,
     )
-    wiki_pathways_input = (chebi_compound_dict["inchiKey"], config, session)
+    wiki_pathways_input = (chebi_compound_dict["inchiKey"], mtbls_id, config, session)
     kegg_pathways_input = (chebi_compound_dict, config, session)
 
     input_list = [
@@ -337,12 +337,12 @@ def ataronchronon(
         kegg_pathways_input,
     ]
     method_list = [
-        ExternalAPIHitter.citation_wrapper,
-        ExternalAPIHitter.cactus_wrapper,
-        ExternalAPIHitter.reactions_wrapper,
-        ExternalAPIHitter.ms_from_mona_wrapper,
-        ExternalAPIHitter.wikipathways_wrapper,
-        ExternalAPIHitter.kegg_wrapper,
+        ThreadedAPICaller.citation_wrapper,
+        ThreadedAPICaller.cactus_wrapper,
+        ThreadedAPICaller.reactions_wrapper,
+        ThreadedAPICaller.ms_from_mona_wrapper,
+        ThreadedAPICaller.wikipathways_wrapper,
+        ThreadedAPICaller.kegg_wrapper,
     ]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ur_executor:
@@ -394,7 +394,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
 
     :return: dict representing the information held in chebi on a particular compound.
     """
-    """This request needs to be made first, as the rest of the other API calls depend on it's response."""
+    """This request needs to be made first, as the rest of the API calls depend on its response."""
 
     chebi_response = session.get(f"{config.urls.misc_urls.chebi_api}{id}").content
     print(chebi_response)
@@ -405,7 +405,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
         .find("{https://www.ebi.ac.uk/webservices/chebi}return")
     )
 
-    # log out the ID so we know it's a valid 'un
+    # log out the ID so we can discern if it's valid
     CommandLineUtils.print_line_of_token()
     print(root.find("{https://www.ebi.ac.uk/webservices/chebi}chebiId").text)
 
@@ -435,7 +435,7 @@ def get_chebi_data(id, ml_mapping, config, session: Session) -> dict:
         for key, value in config.objs.chebi_adv_keys_map.items()
     }
 
-    # mash the two dicts together
+    # combine the two dicts
     return {**chebi_basic_dict, **chebi_advanced_dict}
 
 
@@ -676,7 +676,7 @@ class ChebiPopulator:
         return self
 
 
-class ExternalAPIHitter:
+class ThreadedAPICaller:
     """
     The methods in this class come in twos:
     - method_wrapper(tuple_of_inputs)
@@ -690,7 +690,7 @@ class ExternalAPIHitter:
     @staticmethod
     def citation_wrapper(citation_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_citations(*citation_tuple),
+            "results": ThreadedAPICaller.get_citations(*citation_tuple),
             "name": "citations",
         }
 
@@ -742,7 +742,7 @@ class ExternalAPIHitter:
     @staticmethod
     def cactus_wrapper(cactus_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_cactus_structure(*cactus_tuple),
+            "results": ThreadedAPICaller.get_cactus_structure(*cactus_tuple),
             "name": "cactus",
         }
 
@@ -762,7 +762,7 @@ class ExternalAPIHitter:
     @staticmethod
     def reactions_wrapper(reactions_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_reactions(*reactions_tuple),
+            "results": ThreadedAPICaller.get_reactions(*reactions_tuple),
             "name": "reactions",
         }
 
@@ -810,7 +810,7 @@ class ExternalAPIHitter:
     @staticmethod
     def ms_from_mona_wrapper(spectra_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_ms_from_mona(*spectra_tuple),
+            "results": ThreadedAPICaller.get_ms_from_mona(*spectra_tuple),
             "name": "spectra",
         }
 
@@ -874,14 +874,14 @@ class ExternalAPIHitter:
     @staticmethod
     def wikipathways_wrapper(pathway_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_wikipathways(*pathway_tuple),
+            "results": ThreadedAPICaller.get_wikipathways(*pathway_tuple),
             "name": "wikipathways",
         }
 
     @staticmethod
     @http_exception_angel
     def get_wikipathways(
-        inchi_key: str, config: CompoundBuilderConfig, session: Session
+        inchi_key: str, chebi_id: str, config: CompoundBuilderConfig, session: Session
     ) -> dict:
         """
         Hit the wikipathways API, and for each result / pathway, parse it into a new dict and append that pathway to a
@@ -892,13 +892,16 @@ class ExternalAPIHitter:
         :param session: Session object to make http call.
         :return: dict object representing pathways for particular compound.
         """
-        format_params = "&codes=Ik&format=json"
-        val = f"{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"
+        chebi_code = "Ce"
+        inchi_code = "Ik"
+        format_params = f"&codes={chebi_code}&format=json"
+        val = f"{config.urls.misc_urls.wikipathways_api}{chebi_id.strip(('MTBLC'))}{format_params}"
         print(f"Attempting to retrieve wikipathways data from {val}")
         final_pathways = {}
-        wikipathways = session.get(
-            f"{config.urls.misc_urls.wikipathways_api}{inchi_key}{format_params}"
-        ).json()["result"]
+        wikipathways_response = session.get(
+            val
+        )
+        wikipathways = wikipathways_response.json()['result']
 
         for pathway in wikipathways:
             if pathway["species"] not in final_pathways:
@@ -916,7 +919,7 @@ class ExternalAPIHitter:
     @staticmethod
     def kegg_wrapper(kegg_tuple) -> dict:
         return {
-            "results": ExternalAPIHitter.get_kegg_pathways(*kegg_tuple),
+            "results": ThreadedAPICaller.get_kegg_pathways(*kegg_tuple),
             "name": "kegg_pathways",
         }
 
@@ -1117,8 +1120,7 @@ class ExternalAPIResultSorter:
 
 class _InternalUtils:
     """
-    Internal utils class, private to this script, sticking all static methods that don't belong anywhere else here (as
-    util classes are SUPPOSED TO BE)
+    Internal utils class, private to this script, sticking all static methods that don't belong anywhere else here.
     """
 
     @staticmethod
