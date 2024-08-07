@@ -15,7 +15,7 @@ class ArgParsers:
         :return: instantiated ArgumentParser
         """
         cal_default_dest = "/Users/cmartin/projects/fake_compound_dir/"
-        cal_ftp = "/Users/cmartin/Projects/compound-directory-builder/ephemeral"
+        cal_ftp = "/Users/cmartin/Projects/compound-library-builder/ephemeral"
 
         parser = argparse.ArgumentParser(
             description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -49,14 +49,14 @@ class ArgParsers:
         parser.add_argument(
             "-rc",
             "--redis_config",
-            default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.secrets/redis.yaml",
             help="location of redis.yaml file",
         )
         parser.add_argument(
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/.configs/quarterly.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.configs/quarterly.yaml",
         )
         return parser
 
@@ -74,13 +74,13 @@ class ArgParsers:
             "-rc",
             "--redis_config",
             help="Absolute path to redis config.yaml file",
-            default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.secrets/redis.yaml",
         )
         parser.add_argument(
             "-qc",
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
-            default="/Users/cmartin/Projects/compound-directory-builder/.configs/quarterly.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.configs/quarterly.yaml",
         )
         return parser
 
@@ -96,7 +96,7 @@ class ArgParsers:
             "-c",
             "--config",
             help="Absolute path to the mapping_file_builder.yaml file",
-            default="/Users/cmartin/Projects/compound-directory-builder/.secrets/mapping_file_builder.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.secrets/mapping_file_builder.yaml",
         )
         return parser
 
@@ -107,7 +107,7 @@ class ArgParsers:
             "-rc",
             "--redis_config",
             help="Absolute path to redis config.yaml file",
-            default="/Users/cmartin/Projects/compound-directory-builder/.secrets/redis.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.secrets/redis.yaml",
         )
         return parser
 
@@ -118,6 +118,12 @@ class ArgParsers:
             "-c",
             "--reactome_config",
             help="Absolute path to reactome builder confing .yaml file",
-            default="/Users/cmartin/Projects/compound-directory-builder/.configs/reactome_builder_config.yaml",
+            default="/Users/cmartin/Projects/compound-library-builder/.configs/reactome_builder_config.yaml",
         )
+        return parser
+
+    @staticmethod
+    def accession_diff_parser() -> argparse.ArgumentParser:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--token", help="MetaboLights API Token")
         return parser

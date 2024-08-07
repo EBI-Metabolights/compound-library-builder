@@ -8,23 +8,19 @@ from typing import List
 import requests
 import pandas as pd
 
-
+from accession_diff_analyzer.analyzer_dataclasses import OverviewMetrics, IDWatchdog, IDRegistry
 from compound_common.transport_clients.ebi_ftp_handler import EBIFTPHandler
 from compound_common.doc_clients.xml_utils import XmlResponseUtils
 from compound_common.doc_clients.jinja_wrapper import JinjaWrapper
 from config_classes.ftp_config import FTPConfig
-from maf_chebi_cross_checker.checker_dataclasses import (
-    OverviewMetrics,
-    IDWatchdog,
-    IDRegistry,
-)
+
 
 from function_wrappers.checker_wrappers.file_write_exception_angel import (
     file_rw_exception_angel,
 )
 
 
-class Checker:
+class Analyzer:
     def __init__(
         self,
         session: requests.Session,
@@ -345,7 +341,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     token = args.token
 
-    Checker(
+    Analyzer(
         session=requests.Session(),
         handler=EBIFTPHandler(
             config=FTPConfig(
