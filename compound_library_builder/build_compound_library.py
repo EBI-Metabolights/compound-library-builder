@@ -1136,7 +1136,9 @@ class _InternalUtils:
         """
         val = None
         try:
-            val = root.find("{https://www.ebi.ac.uk/webservices/chebi}" + key).text
+            result = root.find("{https://www.ebi.ac.uk/webservices/chebi}" + key)
+            if val is not None:
+                val = result.text
         except Exception as e:
             logging.exception(str(e))
             print(f"error getting key {str(e)} from chebi response")
