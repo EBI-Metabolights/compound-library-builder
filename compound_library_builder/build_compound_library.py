@@ -204,7 +204,6 @@ def build_compound(metabolights_id, ml_mapping, reactome_data, data_directory):
     # do some updating
     compound_dict["id"] = metabolights_id
 
-    # perform the gnarliest dict comprehension anyone has ever seen
     # essentially just copies values from the chebi compound dict to the mtbl dict, referring to
     # `ml_compound_chebi_compound_map` so it knows which key on the chebi dict matches which key on the mtbl dict.
     # Also, if a value is not present, and the type of that value is not a string, it refers to the

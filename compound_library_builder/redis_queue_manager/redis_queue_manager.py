@@ -44,7 +44,7 @@ class CompoundRedisQueueManager:
         if self.redis_client.check_queue_exists(self.cbrc.name)["items"] > 0:
             print("Queue populated. Risk of duplication. Evacuating Queue.")
             self.redis_client.empty_queue(self.cbrc.name)
-        compounds = self.get_compounds_ids()
+        compounds = self.get_compounds_ids(self.cbrc.compound_dir)
         chunked = ListUtils.get_lol(compounds, self.cbrc.chunk_size)
         self.push_compound_ids_to_redis(chunked)
 
