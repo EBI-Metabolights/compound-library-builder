@@ -76,7 +76,7 @@ class CompoundRedisQueueManager:
             compounds = ListUtils.get_delta(
                 compounds, DirUtils.get_mtblc_ids_from_directory(mtblc_dir)
             )
-        print(f'new compounds: ${self.cbrc.new_compounds_only} total: ${len(compounds)}')
+        print(f'new compounds: {self.cbrc.new_compounds_only} total: {len(compounds)} compound directory used for delta: {self.cbrc.compound_dir}')
         return compounds
 
     def consume_queue(self) -> List[str]:
