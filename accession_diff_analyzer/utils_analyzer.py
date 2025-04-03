@@ -108,6 +108,7 @@ class UtilsAnalyzer:
             print("____________________________________________________________________________")
             print(f"Processing {study}")
             mtbls_folder = f"{self.study_root_path}/{study}"
+            print(f'attempting to load {mtbls_folder}')
             model: MetabolightsStudyModel = self.load_study(mtbls_folder)
             mb = MAFBreakdown(study)
             for maf in model.referenced_assignment_files:
@@ -214,6 +215,7 @@ class UtilsAnalyzer:
             load_maf_files=True,  # TODO: Enable this if it is needed
             load_folder_metadata=False,  # TODO: Disable this if it is needed
         )
+        print(model)
         return model
 
     def assemble_registries(self, compound_list, maf_ids) -> IDRegistrySet:
