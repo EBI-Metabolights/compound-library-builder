@@ -1,8 +1,6 @@
 import pytest
 
-from compound_dir_builder.redis_queue_manager.redis_queue_manager import (
-    CompoundRedisQueueManager,
-)
+from compound_library_builder.redis_queue_manager.redis_queue_manager import CompoundRedisQueueManager
 from config_classes.transport.redis_config import CompoundBuilderRedisConfig
 
 
