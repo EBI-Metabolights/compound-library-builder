@@ -139,9 +139,9 @@ class UtilsAnalyzer:
         )
         # do some saving or plotting from here
         print(registry_set)
-        with open("ephemeral/compound_statistics.pkl", "w") as f:
+        with open("ephemeral/compound_statistics.pkl", "wb") as f:
             pickle.dump(rcs, f)
-        with open("ephemeral/id_registry_set.pkl", "w") as f:
+        with open("ephemeral/id_registry_set.pkl", "wb") as f:
             pickle.dump(registry_set, f)
 
     def process_maf(self, study: str, maf: str, valid_fields: Set[str], mb: MAFBreakdown) -> MAFBreakdown:
