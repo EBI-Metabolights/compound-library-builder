@@ -16,7 +16,7 @@ class IDRegistry:
 
 
 @dataclass
-class IDWatchdog:
+class IDRegistrySet:
     """
     Dataclass with two IDRegistries, one, maf, for all IDs found in MetaboLights MAF sheets, and the other, db, for all
     IDs found in the MetaboLights DB compound table.
@@ -36,3 +36,4 @@ class OverviewMetrics:
     studies_processed: int
     total_mafs: int
     mafs_processed: int
+    bad_mafs: int

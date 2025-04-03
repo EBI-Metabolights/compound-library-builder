@@ -7,7 +7,7 @@ class JinjaWrapper:
     """
 
     def __init__(self):
-        self.env = Environment(loader=FileSystemLoader("../../templates"))
+        self.env = Environment(loader=FileSystemLoader("templates"))
         self.template = None
 
     def load_template(self, template_path):

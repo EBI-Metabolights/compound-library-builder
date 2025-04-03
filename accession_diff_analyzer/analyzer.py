@@ -3,7 +3,8 @@ import json
 import logging
 import math
 import re
-from typing import List
+from abc import abstractmethod, ABC
+from typing import List, Any
 
 import requests
 import pandas as pd
@@ -20,6 +21,43 @@ from function_wrappers.checker_wrappers.file_write_exception_angel import (
 )
 
 
+
+class MAFProcessorBase(ABC):
+
+    @abstractmethod
+    def get_maf(self, maf: str, study: str) -> Any:
+        pass
+
+    @abstractmethod
+    def process_maf(self, maf_object: Any) -> None:
+        pass
+
+
+
+
+class DataFrameMAFProcessor(MAFProcessorBase):
+    def __init__(self, handler, ids: set, is_dud_fn, process_identifier_fn):
+        self.handler = handler
+        self._ids = set()
+        self.is_dud = is_dud_fn
+        self.process_identifier = process_identifier_fn
+
+    def get_maf(self, maf: str, study: str) -> pd.DataFrame:
+        return self.handler.load_isa_file(isatab_file=maf, study=study)
+
+    def process_maf(self, maf_dataframe: pd.DataFrame) -> None:
+        if maf_dataframe is None:
+            return
+
+        for _, row in maf_dataframe.iterrows():
+            identifier = row.get("database_identifier")
+            if not self.is_dud(identifier):
+                self.process_identifier(identifier)
+
+class MtblsUtilsMAFProcessor(MAFProcessorBase):
+    def __init__(self):
+        pass
+
 class Analyzer:
     def __init__(
         self,
@@ -27,70 +65,57 @@ class Analyzer:
         handler: EBIFTPHandler,
         token: str,
         jinja_wrapper: JinjaWrapper = JinjaWrapper(),
-        output_location: str = "./outputs/",
+        output_location: str = "./ephemeral/",
+        maf_processor: MAFProcessorBase = None,
     ):
-        """
-        Init method
-        :param session: requests.Session object, used repeatedly so kept in self
-        :param handler: EBIFTPHandler object, used to download MAF sheets from FTP.
-        """
         self.handler = handler
         self.session = session
         self.token = token
         self.j = jinja_wrapper
 
-        # below needs redoing - original sdf file much too
-        # self.ccc = ChebiCompleteClient('/Users/cmartin/Projects/ChEBI_complete.sdf')
-
-        # create a set to hold metabolite ids since we dont want any duplicates to be persisted
         self.ids = set()
-
         self.bad_mafs = []
 
-        # maybe wanna break these off into a config class
         self.duds = ["|", "unknown", "Unknown", "-", " "]
         self.debug = True
         self.limit = 10
         self.output_location = output_location
-        # maybe wanna make a little chebi webservice wrapper or something
+
         self.chebi_complete_entity_url = (
             "http://www.ebi.ac.uk/webservices/chebi/2.0/test/getCompleteEntity?chebiId="
         )
 
+        self.maf_processor = maf_processor or DataFrameMAFProcessor(
+            handler=self.handler,
+            ids=self.ids,
+            is_dud_fn=self.is_dud,
+            process_identifier_fn=self.process_identifier,
+        )
+
     def go(self):
-        """
-        Entry point method to the Checker. Gets all studies, then iterates over them, retrieving each maf file in the
-        study, and processing that MAF sheet row by row for the entries in its database_identifier column.
-        :return: N/A
-        """
         self.j.load_template("cross-checker-report.j2")
 
         response = self.session.get("https://www.ebi.ac.uk:443/metabolights/ws/studies")
         studies = json.loads(response.text)["content"]
 
-        # Counters that will be interpolated into the checker report.
-
-        overview = OverviewMetrics(len(studies), 0, 0, 0)
+        overview = OverviewMetrics(len(studies), 0, 0, 0, 0)
 
         for study in studies:
             if overview.studies_processed > self.limit and self.debug:
                 break
 
-            print(
-                "____________________________________________________________________________"
-            )
+            print("____________________________________________________________________________")
             print(f"Processing {study}")
 
             maf_files = self.get_list_of_maf_files_in_study(study, overview)
             for maf in maf_files:
-                dataframe = None
                 try:
-                    dataframe = self.get_maf(maf["file"], study)
+                    maf_data = self.maf_processor.get_maf(maf["file"], study)
                 except Exception as e:
                     self.bad_mafs.append(maf)
                     logging.exception(f"couldnt load {maf}")
                     continue
-                self.process_maf(dataframe)
+                self.maf_processor.process_maf(maf_data)
                 overview.mafs_processed += 1
 
         compound_list = self.session.get(
@@ -249,6 +274,7 @@ class Analyzer:
             print(
                 f"Found non zero numeric identifier or structure descriptor {identifier}"
             )
+            
         elif identifier.startswith("CHEBI") or identifier.count("CHEBI") > 0:
             if identifier.count("CHEBI") > 1:
                 identifiers = {
@@ -280,6 +306,10 @@ class Analyzer:
         if identifier in self.duds:
             return True
         if isinstance(identifier, float):
+            if identifier == 0:
+                return True
+            return math.isnan(identifier)
+        if isinstance(identifier, int):
             if identifier == 0:
                 return True
             return math.isnan(identifier)
