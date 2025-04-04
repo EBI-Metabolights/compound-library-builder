@@ -11,7 +11,8 @@ from typing import Optional, List, Set
 
 import requests
 
-from accession_diff_analyzer.analyzer_dataclasses import OverviewMetrics, IDRegistrySet, IDRegistry
+from accession_diff_analyzer.analyzer_dataclasses import IDRegistrySet, IDRegistry, \
+    DiffAnalyzerOverviewMetrics
 from compound_common.collectors.local_folder_metadata_collector import LocalFolderMetadataCollector
 from compound_common.doc_clients.jinja_wrapper import JinjaWrapper
 from metabolights_utils.models.metabolights.model import (
@@ -103,7 +104,7 @@ class UtilsAnalyzer:
         studies = json.loads(response.text)["content"]
 
         rcs = ReportedCompoundsStats()
-        overview = OverviewMetrics(len(studies), 0, 0, 0, 0)
+        overview = DiffAnalyzerOverviewMetrics(len(studies), 0, 0, 0)
         for study in studies:
             print("____________________________________________________________________________")
             print(f"Processing {study}")
@@ -118,7 +119,7 @@ class UtilsAnalyzer:
                     )
                     overview.mafs_processed += 1
                 except Exception as e:
-                    overview.bad_mafs += 1
+                    overview.bad_mafs.append(maf)
                     logging.exception(f"Unable to load {maf}: {str(e)}")
 
 
@@ -139,11 +140,11 @@ class UtilsAnalyzer:
             ]
         )
         # do some saving or plotting from here
-        print(registry_set)
         with open("ephemeral/compound_statistics.pkl", "wb") as f:
             pickle.dump(rcs, f)
         with open("ephemeral/id_registry_set.pkl", "wb") as f:
             pickle.dump(registry_set, f)
+        print(overview)
 
     def process_maf(self, study: str, maf: str, valid_fields: Set[str], mb: MAFBreakdown) -> MAFBreakdown:
         file_path = pathlib.Path(f'{self.study_root_path}/{study}/{maf}')
@@ -164,6 +165,7 @@ class UtilsAnalyzer:
             )
 
             num_rows = len(next(iter(result.isa_table_file.table.data)))
+            num_rows = result.isa_table_file.table.row_count
             for i in range(num_rows):
                 row_values = {
                     key: col[i]
@@ -215,7 +217,6 @@ class UtilsAnalyzer:
             load_maf_files=True,  # TODO: Enable this if it is needed
             load_folder_metadata=False,  # TODO: Disable this if it is needed
         )
-        print(model)
         return model
 
     def assemble_registries(self, compound_list, maf_ids) -> IDRegistrySet:

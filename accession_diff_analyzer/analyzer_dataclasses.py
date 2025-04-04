@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass
@@ -27,7 +28,7 @@ class IDRegistrySet:
 
 
 @dataclass
-class OverviewMetrics:
+class DiffAnalyzerOverviewMetrics:
     """
     Simple dataclass used as a running overview of the MAF sheet - ChEBI cross referencing process
     """
@@ -36,4 +37,4 @@ class OverviewMetrics:
     studies_processed: int
     total_mafs: int
     mafs_processed: int
-    bad_mafs: int
+    bad_mafs: List[str] = field(default_factory=list)
