@@ -1133,15 +1133,15 @@ class _InternalUtils:
         :param key: The key to search the root document for.
         :return: Result of search
         """
-        val = None
         try:
-            result = root.find("{https://www.ebi.ac.uk/webservices/chebi}" + key)
-            if val is not None:
-                val = result.text
+            ns_key = f"{{https://www.ebi.ac.uk/webservices/chebi}}{key}"
+            result = root.find(ns_key)
+            if result is not None:
+                return result.text
         except Exception as e:
-            logging.exception(str(e))
-            print(f"error getting key {str(e)} from chebi response")
-        return val
+            logging.exception("Error getting key from ChEBI response: %s", e)
+            print(f"Error getting key {key} from ChEBI response: {str(e)}")
+        return None
 
     @staticmethod
     def initialize_compound_dict() -> dict:
