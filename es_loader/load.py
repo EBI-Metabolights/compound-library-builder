@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import argparse, json, os, re, sys
+import base64
+import hashlib
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 import requests
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 # ---------- JSON Schemas (trimmed but strict enough) ----------
 COMPOUND_SCHEMA = {
@@ -125,18 +129,22 @@ def find_compound_dirs(root: Path) -> List[Path]:
             comp_dirs.append(d)
     return comp_dirs
 
+def bulk_flush(es, actions, max_bytes=90*1024*1024):
+    if not actions: return actions
+    payload = ("\n".join(json.dumps(a, separators=(",",":")) for a in actions) + "\n").encode()
+    if len(payload) >= max_bytes:
+        es.bulk(actions); return []
+    return actions
+
 # ---------- parsing & validation ----------
 def pick_compound_json(comp_dir: Path) -> Optional[Path]:
-    files=[p for p in comp_dir.glob("*.json") if p.is_file()]
-    data=[p for p in files if p.name.endswith("_data.json")]
+    files=[p for p in comp_dir.iterdir() if p.is_file() and p.suffix.lower()==".json"]
+    data=[p for p in files if p.name.lower().endswith("_data.json")]
     if data: return data[0]
     if len(files)==1: return files[0]
-    for p in files:  # heuristic
-        try:
-            j=json.loads(p.read_text(encoding="utf-8"))
-            if "inchiKey" in j or "smiles" in j: return p
-        except: pass
-    # if many jsons and none look like the compound data, return None
+    # choose the one that looks like a compound
+    for p in files:
+        if is_compound_json(p): return p
     return None
 
 def parse_compound(j: dict) -> Tuple[dict, Dict[str,dict], List[str]]:
@@ -200,6 +208,8 @@ def parse_spectrum_file(p: Path) -> Tuple[Optional[dict], Optional[str]]:
       "modality": s.get("modality") or "MS",
       "mzStart": as_float(s.get("mzStart")),
       "mzStop": as_float(s.get("mzStop")),
+      "ppmStart": as_float(s.get("ppmStart")),
+      "ppmStop": as_float(s.get("ppmStop")),
     }
     peaks = s.get("peaks")
     if not isinstance(peaks, list): return None, "invalid: peaks not a list"
@@ -213,35 +223,280 @@ def parse_spectrum_file(p: Path) -> Tuple[Optional[dict], Optional[str]]:
     out["peaks_intensity"]=it_arr
     return out, None
 
-# ---------- main ----------
+def normalize_compound(d):
+    """
+    Normalize a raw compound dict into an ES-friendly document.
+    - Flattens species -> species_hits[]
+    - Flattens pathways into compact lists
+      * ReactomePathways may be a dict of lists keyed by species; we dedupe across species.
+    """
+    # 1) species → species_hits[]
+    hits = []
+    for sp_name, items in (d.get("species") or {}).items():
+        study_ids = {i.get("SpeciesAccession") for i in items if i.get("SpeciesAccession")}
+        assay_sum = sum(int(i.get("Assay", 0) or 0) for i in items)
+        hits.append({"species": sp_name, "study_ids": sorted(study_ids), "assay_sum": assay_sum})
+
+    # 2) pathways → compact lists
+    # KEGG: keep simple list (id, name, ko)
+    kegg = []
+    for p in (d.get("pathways", {}).get("KEGGPathways") or []):
+        if not isinstance(p, dict):
+            continue
+        kegg.append({
+            "id": p.get("id"),
+            "name": p.get("name"),
+            "ko": p.get("KO_PATHWAYS")
+        })
+
+    # Reactome: may be dict-of-lists keyed by species; each item has name, pathwayId, url, reactomeId
+    reactome = []
+    seen_rx = set()
+    rx_src = (d.get("pathways", {}) or {}).get("ReactomePathways") or []
+    if isinstance(rx_src, dict):
+        # dict: { "Homo sapiens": [ {...}, ... ], "Mus musculus": [ {...}, ... ] }
+        for _species, lst in rx_src.items():
+            for p in (lst or []):
+                if not isinstance(p, dict):
+                    continue
+                rid = p.get("reactomeId") or p.get("pathwayId") or p.get("id")
+                name = p.get("name")
+                key = (rid or "", name or "")
+                if key in seen_rx:
+                    continue
+                seen_rx.add(key)
+                reactome.append({"id": rid, "name": name})
+    else:
+        # already a flat list
+        for p in (rx_src or []):
+            if not isinstance(p, dict):
+                continue
+            rid = p.get("reactomeId") or p.get("pathwayId") or p.get("id")
+            name = p.get("name")
+            key = (rid or "", name or "")
+            if key in seen_rx:
+                continue
+            seen_rx.add(key)
+            reactome.append({"id": rid, "name": name})
+
+    # WikiPathways: keep simple list (id, name)
+    wikipw = []
+    for p in (d.get("pathways", {}).get("WikiPathways") or []):
+        if not isinstance(p, dict):
+            continue
+        wikipw.append({"id": p.get("id"), "name": p.get("name")})
+
+    # counts / presence
+    synonyms = d.get("synonyms") or []
+    iupacs = d.get("iupacNames") or []
+    citations = d.get("citations") or []
+    reactions = d.get("reactions") or []
+    spectrum_ids = d.get("spectrum_ids") or []
+    spectra_count = int(d.get("spectra_count") or 0)
+
+    doc = {
+        "id": d.get("id"),
+        "name": d.get("name"),
+        "definition": d.get("definition"),
+        "iupacNames": iupacs,
+        "synonyms": synonyms,
+        "smiles": d.get("smiles"),
+        "inchi": d.get("inchi"),
+        "inchiKey": d.get("inchiKey"),
+        "formula": d.get("formula"),
+        "charge": int(d.get("charge") or 0),
+        "averagemass": float(d.get("averagemass") or 0) if d.get("averagemass") else None,
+        "exactmass":  float(d.get("exactmass")  or 0) if d.get("exactmass")  else None,
+
+        "flags": {
+            "hasLiterature": d.get("flags", {}).get("hasLiterature") == "true",
+            "hasReactions":  d.get("flags", {}).get("hasReactions")  == "true",
+            "hasSpecies":    d.get("flags", {}).get("hasSpecies")    == "true",
+            "hasPathways":   d.get("flags", {}).get("hasPathways")   == "true",
+            "hasNMR":        d.get("flags", {}).get("hasNMR")        == "true",
+            "hasMS":         d.get("flags", {}).get("hasMS")         == "true",
+
+            "hasMolfile":        bool(d.get("structure")),
+            "hasSmiles":         bool(d.get("smiles")),
+            "hasInchi":          bool(d.get("inchi")),
+            "hasSynonyms":       len(synonyms) > 0,
+            "hasIupac":          len(iupacs) > 0,
+            "hasCitations":      len(citations) > 0,
+            "hasReactionsList":  len(reactions) > 0,
+            "hasSpeciesHits":    len(hits) > 0,
+            "hasKegg":           len(kegg) > 0,
+            "hasReactome":       len(reactome) > 0,
+            "hasWikiPathways":   len(wikipw) > 0,
+            "hasSpectraListed":  spectra_count > 0,
+            "hasExactMass":      d.get("exactmass") is not None,
+            "hasAverageMass":    d.get("averagemass") is not None,
+            "hasCharge":         str(d.get("charge") or "0") not in ("", "0"),
+        },
+
+        "counts": {
+            "synonyms": len(synonyms),
+            "iupac": len(iupacs),
+            "citations": len(citations),
+            "reactions": len(reactions),
+            "species_hits": len(hits),
+            "species_total_assays": sum(h.get("assay_sum", 0) for h in hits),
+            "kegg": len(kegg),
+            "reactome": len(reactome),
+            "wikipathways": len(wikipw),
+            "spectra": spectra_count,
+        },
+
+        "pathways": {
+            "kegg": kegg,
+            "reactome": reactome,
+            "wikipathways": wikipw
+        },
+
+        "citations": citations,
+        "reactions": reactions,
+        "species_hits": hits,
+
+        "spectrum_ids": spectrum_ids,
+        "spectra_count": spectra_count,
+
+        # keep retrieval-only bits
+        "structure_molfile": base64.b64encode((d.get("structure") or "").encode("utf-8")).decode("ascii"),
+        "raw": d
+    }
+    return doc
+def normalize_spectrum(s: dict) -> dict:
+    """
+    Normalize a spectrum doc to a compact, mapping-friendly shape and add a few
+    derived metrics. Keeps only a safe whitelist to avoid field explosion.
+    """
+    out = {}
+
+    # --- identity & modality ---
+    out["spectrumId"] = str(s.get("spectrumId")) if s.get("spectrumId") is not None else None
+    mod = s.get("modality") or "MS"
+    out["modality"] = str(mod).upper()
+
+    # --- peaks (clean, typed, derived) ---
+    mz = [as_float(x) for x in (s.get("peaks_mz") or [])]
+    it = [as_float(x) for x in (s.get("peaks_intensity") or [])]
+    pairs = [(m, i) for m, i in zip(mz, it) if m is not None and i is not None]
+    if pairs:
+        mz, it = map(list, zip(*pairs))
+    else:
+        mz, it = [], []
+    out["peaks_mz"] = mz
+    out["peaks_intensity"] = it
+    out["n_peaks"] = len(mz)
+
+    if mz:
+        out["min_mz"] = min(mz)
+        out["max_mz"] = max(mz)
+
+    # mz/ppm windows (prefer explicit; fall back to computed when possible)
+    mzStart = as_float(s.get("mzStart"))
+    mzStop  = as_float(s.get("mzStop"))
+    out["mzStart"] = mzStart if mzStart is not None else (out.get("min_mz"))
+    out["mzStop"]  = mzStop  if mzStop  is not None else (out.get("max_mz"))
+
+    if "ppmStart" in s: out["ppmStart"] = as_float(s.get("ppmStart"))
+    if "ppmStop"  in s: out["ppmStop"]  = as_float(s.get("ppmStop"))
+
+    # TIC and base peak
+    if it:
+        out["tic"] = sum(v for v in it if v is not None)
+        idx = max(range(len(it)), key=lambda k: it[k])
+        out["bpi"] = it[idx]
+        out["base_peak_mz"] = mz[idx]
+
+    # --- carry whitelisted meta (typed) ---
+    META_KEYS = (
+        "inchikey","compound_id","instrument","instrument_type","ionization",
+        "ionization_mode","polarity","ms_level","fragmentation_mode",
+        "collision_energy","resolution","retention_time","precursor_mz",
+        "precursor_type","column","flow_gradient","flow_rate","date"
+    )
+    for k in META_KEYS:
+        v = s.get(k)
+        if v is None:
+            continue
+        if k in ("ms_level",):
+            v = as_int(v)
+        elif k in ("collision_energy","resolution","retention_time","precursor_mz"):
+            v = as_float(v)
+        elif k in ("ionization_mode","polarity"):
+            v = norm_mode(v)
+        out[k] = v
+
+    # source sub-object (keep it tight)
+    if isinstance(s.get("source"), dict):
+        src = {}
+        for kk in ("url","submitter","accession"):
+            if s["source"].get(kk) is not None:
+                src[kk] = str(s["source"][kk])
+        if src:
+            out["source"] = src
+
+    return out
+
+def compute_structure_features(d: dict):
+    """Returns (fp_dense, fp_bits, elements, canon_smiles) or Nones if RDKit missing/parse fails."""
+    if not Chem: return (None, None, None, None)
+    mol = None
+    molfile = d.get("structure") or ""
+    smi = d.get("smiles")
+    if molfile:
+        mol = Chem.MolFromMolBlock(molfile, sanitize=True)
+    if not mol and smi:
+        mol = Chem.MolFromSmiles(smi)
+    if not mol: return (None, None, None, None)
+
+    # canonical smiles
+    canon_smiles = Chem.MolToSmiles(mol, canonical=True)
+
+    # elements
+    elems = sorted({a.GetSymbol() for a in mol.GetAtoms()})
+
+    # ECFP4 (radius=2), 2048 bits
+    bv = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+    onbits = list(bv.GetOnBits())
+    fp_dense = [1.0 if i in onbits else 0.0 for i in range(2048)]
+    fp_bits = [str(i) for i in onbits]
+
+    return (fp_dense, fp_bits, elems, canon_smiles)
+
 def main():
-    ap=argparse.ArgumentParser()
+    ap = argparse.ArgumentParser()
     ap.add_argument("--root-dir", required=True, help="Root directory containing per-compound folders")
-    ap.add_argument("--es", default="http://localhost:9200")
+    ap.add_argument("--es", default="http://localhost:19200")
     ap.add_argument("--user", default=None)
     ap.add_argument("--password", default=None)
-    ap.add_argument("--compounds-index", default="compounds_v1")
+    ap.add_argument("--compounds-index", default="compounds_v2")
     ap.add_argument("--spectra-index", default="spectra_v1")
     ap.add_argument("--pipeline", default="spectra_pipeline_v1")
-    ap.add_argument("--batch", type=int, default=5000)
+    ap.add_argument("--batch", type=int, default=1000)
     ap.add_argument("--dry-run", action="store_true", help="Do not index; only validate and report")
     ap.add_argument("--validate", action="store_true", help="Validate against JSON Schemas (requires jsonschema)")
     ap.add_argument("--report", default=None, help="Directory to write JSONL reports")
-    args=ap.parse_args()
+    args = ap.parse_args()
 
-    auth=(args.user,args.password) if args.user else None
+    auth = (args.user,args.password) if args.user else None
     es = None if args.dry_run else ES(args.es, auth)
 
     # reports
-    comp_rows=[]; spec_rows=[]
+    comp_rows = []
+    spec_rows = []
 
-    comp_ok=comp_invalid=comp_parse=0
-    spec_ok=spec_invalid=spec_parse=spec_unlinked=0
+    comp_ok = comp_invalid = comp_parse = 0
+    spec_ok = spec_invalid = spec_parse = spec_unlinked = 0
 
-    comp_actions=[]; spec_actions=[]
+    comp_actions = []
+    spec_actions = []
 
-    root=Path(args.root_dir)
-    comp_dirs=[p for p in root.iterdir() if p.is_dir()]
+    compounds_with_multiple_spectrum = []
+    total_spectra_files = []
+
+    root = Path(args.root_dir)
+    comp_dirs = find_compound_dirs(root)
     for comp_dir in sorted(comp_dirs):
         comp_path=pick_compound_json(comp_dir)
         if not comp_path:
@@ -265,6 +520,9 @@ def main():
                 reasons.append(f"schema: {e}")
 
         comp_doc, meta_map, warns = parse_compound(raw)
+        # some compounds have identical inchikeys, so we make a source ID by hand to prevent overwriting
+        src_uid = hashlib.sha1(str(comp_path.resolve()).encode("utf-8")).hexdigest()[:16]
+
         reasons.extend(warns)
 
         if ("inchiKey" not in comp_doc) or not comp_doc.get("inchiKey"):
@@ -280,16 +538,41 @@ def main():
                               "inchiKey":comp_doc.get("inchiKey"),"status":"ok","spectra_listed":comp_doc.get("spectra_count")})
 
         # Index compound (only if not dry-run)
+
+        comp_doc = normalize_compound(comp_doc)
+
         if not args.dry_run:
             ik = comp_doc.get("inchiKey")
-            comp_actions.append({"index":{"_index":args.compounds_index,"_id":f"compound:{ik}","routing":ik}})
+
+            comp_doc["source"] = {
+                "path": str(comp_path),
+                "dir": str(comp_dir),
+                "filename": comp_path.name,
+                "uid": src_uid,
+            }
+            comp_doc["inchiKey_std"] = ik
+
+            index_meta = {
+                "_index": args.compounds_index,
+                "_id": f"compound:{ik}:{src_uid}" if ik else f"compound:NA:{src_uid}",
+            }
+            if ik:
+                index_meta["routing"] = ik
+
+            comp_actions.append({"index": index_meta})
             comp_actions.append(comp_doc)
-            if len(comp_actions)>=args.batch*2:
-                _, errs = es.bulk(comp_actions); comp_actions=[]
-                if errs: print(f"[COMPOUND BULK ERR] {len(errs)}", file=sys.stderr)
+            if len(comp_actions) >= args.batch * 2:
+                _, errs = es.bulk(comp_actions)
+                comp_actions = []
+                if errs:
+                    print(f"[COMPOUND BULK ERR] {len(errs)}", file=sys.stderr)
 
         # spectra under this compound dir
-        spectra_files=[p for p in comp_dir.rglob("*.json") if p != comp_path]
+        spectra_files = [p for p in comp_dir.rglob("*") if
+                         p.is_file() and p.suffix.lower() == ".json" and p != comp_path]
+        if len(spectra_files) > 1:
+            compounds_with_multiple_spectrum.append(comp_dir)
+        total_spectra_files.extend(spectra_files)
         for sf in spectra_files:
             spec_doc, err = parse_spectrum_file(sf)
             if err:
@@ -334,20 +617,36 @@ def main():
 
             # Index spectrum (only if not dry-run)
             if not args.dry_run:
-                if meta and meta.get("inchikey"):
-                    spec_doc.update({k:v for k,v in meta.items() if k!="source"})
+                spec_uid = hashlib.sha1(str(sf.resolve()).encode("utf-8")).hexdigest()[:16]
+
+                if meta:
+                    spec_doc.update({k: v for k, v in meta.items() if k != "source"})
                     if "source" in meta:
                         src = spec_doc.get("source", {})
                         src.update(meta["source"])
-                        spec_doc["source"]=src
-                    action={"_index":args.spectra_index,"_id":f"spectrum:{sid}","routing":meta["inchikey"],"pipeline":args.pipeline}
-                else:
-                    action={"_index":args.spectra_index,"_id":f"spectrum:{sid}","pipeline":args.pipeline}
+                        spec_doc["source"] = src
+                    spec_doc["inchiKey_std"] = meta.get("inchikey")
+
+                # provenance linkage back to the compound source entry
+                links = spec_doc.get("links", {}) or {}
+                links["compound_source_uid"] = src_uid
+                spec_doc["links"] = links
+
+                action = {
+                    "_index": args.spectra_index,
+                    "_id": f"spectrum:{sid}:{spec_uid}",
+                    "pipeline": args.pipeline,
+                }
+                if meta and meta.get("inchikey"):
+                    action["routing"] = meta["inchikey"]
+
                 spec_actions.append({"index": action})
                 spec_actions.append(spec_doc)
-                if len(spec_actions)>=args.batch*2:
-                    _, errs = es.bulk(spec_actions); spec_actions=[]
-                    if errs: print(f"[SPECTRA BULK ERR] {len(errs)}", file=sys.stderr)
+                if len(spec_actions) >= args.batch * 2:
+                    _, errs = es.bulk(spec_actions)
+                    spec_actions = []
+                    if errs:
+                        print(f"[SPECTRA BULK ERR] {len(errs)}", file=sys.stderr)
 
     # final flush (if indexing)
     if not args.dry_run:
@@ -364,6 +663,8 @@ def main():
     print("\n=== DRY RUN SUMMARY ===" if args.dry_run else "\n=== LOAD SUMMARY ===")
     print(f"Compounds: ok={comp_ok} invalid={comp_invalid} parse_error={comp_parse}")
     print(f"Spectra:   ok={spec_ok} invalid={spec_invalid} parse_error={spec_parse} unlinked={spec_unlinked}")
+    print(f"Compounds  with more than one spectra: {len(compounds_with_multiple_spectrum)}")
+    print(f"Total spectra: {len(total_spectra_files)}")
 
 if __name__=="__main__":
     main()
