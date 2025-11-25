@@ -95,16 +95,22 @@ ATTR_MAP = {
 
 # ---------- ES client (used only when not --dry-run) ----------
 class ES:
-    def __init__(self, base, auth=None, timeout=60):
-        self.base=base.rstrip("/")
-        self.auth=auth
-        self.timeout=timeout
+    def __init__(self, base, auth=None, api_key=None, timeout=60):
+        self.base = base.rstrip("/")
+        self.auth = auth
+        self.timeout = timeout
+        self.headers = {"Content-Type": "application/x-ndjson"}
+        if api_key:
+            self.headers["Authorization"] = f"ApiKey {api_key}"
     def bulk(self, actions: List[dict]):
         if not actions: return (0, [])
-        r=requests.post(f"{self.base}/_bulk",
-                        data=("\n".join(json.dumps(a, separators=(",",":")) for a in actions) + "\n"),
-                        headers={"Content-Type":"application/x-ndjson"},
-                        auth=self.auth, timeout=self.timeout)
+        r = requests.post(
+            f"{self.base}/_bulk",
+            data=("\n".join(json.dumps(a, separators=(",", ":")) for a in actions) + "\n"),
+            headers=self.headers,
+            auth=self.auth,
+            timeout=self.timeout,
+        )
         r.raise_for_status()
         resp=r.json()
         errs=[it for it in resp.get("items",[]) if any(v.get("error") for v in it.values())]
@@ -464,23 +470,47 @@ def compute_structure_features(d: dict):
 
     return (fp_dense, fp_bits, elems, canon_smiles)
 
+def dump_bulk_errs(errs, label, n=5):
+    print(f"[{label} BULK ERR] showing {min(n, len(errs))}/{len(errs)}", file=sys.stderr)
+    for it in errs[:n]:
+        # each item is like {"index": {...}} or {"create": {...}}
+        op, info = next(iter(it.items()))
+        err = info.get("error") or {}
+        status = info.get("status")
+        doc_id = info.get("_id")
+        idx = info.get("_index")
+        print(
+            f"  - op={op} status={status} index={idx} id={doc_id}\n"
+            f"    error_type={err.get('type')}\n"
+            f"    reason={err.get('reason')}\n"
+            f"    caused_by={err.get('caused_by')}\n",
+            file=sys.stderr
+        )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root-dir", required=True, help="Root directory containing per-compound folders")
-    ap.add_argument("--es", default="http://localhost:19200")
+    ap.add_argument("--es", default="https://wwwdev.ebi.ac.uk/metabolights/es/")
     ap.add_argument("--user", default=None)
     ap.add_argument("--password", default=None)
-    ap.add_argument("--compounds-index", default="compounds_v2")
+    ap.add_argument("--compounds-index", default="compounds_v1")
     ap.add_argument("--spectra-index", default="spectra_v1")
     ap.add_argument("--pipeline", default="spectra_pipeline_v1")
     ap.add_argument("--batch", type=int, default=1000)
     ap.add_argument("--dry-run", action="store_true", help="Do not index; only validate and report")
     ap.add_argument("--validate", action="store_true", help="Validate against JSON Schemas (requires jsonschema)")
     ap.add_argument("--report", default=None, help="Directory to write JSONL reports")
-    args = ap.parse_args()
+    ap.add_argument("--api-key", default=None, help="Elasticsearch API key")
 
-    auth = (args.user,args.password) if args.user else None
-    es = None if args.dry_run else ES(args.es, auth)
+    args = ap.parse_args()
+    if args.api_key:
+        es = None if args.dry_run else ES(args.es, api_key=args.api_key)
+    else:
+        auth = (args.user, args.password) if args.user else None
+        es = None if args.dry_run else ES(args.es, auth=auth)
+    #auth = (args.user,args.password) if args.user else None
+    #es = None if args.dry_run else ES(args.es, **auth)
 
     # reports
     comp_rows = []
@@ -501,7 +531,9 @@ def main():
         comp_path=pick_compound_json(comp_dir)
         if not comp_path:
             comp_parse += 1
-            comp_rows.append({"type":"compound","path":str(comp_dir),"status":"parse_error","reason":"no compound json found"})
+            comp_rows.append(
+                {"type":"compound","path":str(comp_dir),"status":"parse_error","reason":"no compound json found"}
+            )
             continue
 
         try:
@@ -565,7 +597,9 @@ def main():
                 _, errs = es.bulk(comp_actions)
                 comp_actions = []
                 if errs:
+
                     print(f"[COMPOUND BULK ERR] {len(errs)}", file=sys.stderr)
+                    dump_bulk_errs(errs, "COMPOUND")
 
         # spectra under this compound dir
         spectra_files = [p for p in comp_dir.rglob("*") if
