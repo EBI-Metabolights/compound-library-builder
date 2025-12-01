@@ -1,0 +1,45 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["spectrumId", "peaks"],
+    "additionalProperties": false,
+    "properties": {
+      "spectrumId": {
+        "bsonType": "string"
+      },
+      "modality": {
+        "bsonType": "string",
+        "enum": ["MS", "NMR"],
+        "description": "Spectrum modality; default logically MS (default not enforced by validator)."
+      },
+      "peaks": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "object",
+          "required": ["mz", "intensity"],
+          "additionalProperties": false,
+          "properties": {
+            "mz": {
+              "bsonType": "double"
+            },
+            "intensity": {
+              "bsonType": "double"
+            }
+          }
+        }
+      },
+      "mzStart": {
+        "bsonType": "double"
+      },
+      "mzStop": {
+        "bsonType": "double"
+      },
+      "ppmStart": {
+        "bsonType": "double"
+      },
+      "ppmStop": {
+        "bsonType": "double"
+      }
+    }
+  }
+}

@@ -11,3 +11,4 @@ flake8
 msgpack
 pytest-cov
 metabolights-utils
+pymongo

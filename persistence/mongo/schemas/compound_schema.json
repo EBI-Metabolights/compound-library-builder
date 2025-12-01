@@ -1,0 +1,294 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["id", "name", "inchiKey"],
+    "properties": {
+      "id": {
+        "bsonType": "string"
+      },
+      "name": {
+        "bsonType": "string"
+      },
+      "definition": {
+        "bsonType": "string"
+      },
+      "iupacNames": {
+        "bsonType": "array",
+        "items": { "bsonType": "string" }
+      },
+      "synonyms": {
+        "bsonType": "array",
+        "items": { "bsonType": "string" }
+      },
+      "smiles": {
+        "bsonType": "string"
+      },
+      "inchi": {
+        "bsonType": "string"
+      },
+      "inchiKey": {
+        "bsonType": "string"
+      },
+      "formula": {
+        "bsonType": "string"
+      },
+      "charge": {
+        "bsonType": "int"
+      },
+      "averagemass": {
+        "bsonType": "double"
+      },
+      "exactmass": {
+        "bsonType": "double"
+      },
+
+      "flags": {
+        "bsonType": "object",
+        "properties": {
+          "hasLiterature":   { "bsonType": "bool" },
+          "hasReactions":    { "bsonType": "bool" },
+          "hasSpecies":      { "bsonType": "bool" },
+          "hasPathways":     { "bsonType": "bool" },
+          "hasNMR":          { "bsonType": "bool" },
+          "hasMS":           { "bsonType": "bool" },
+          "hasMolfile":      { "bsonType": "bool" },
+          "hasSmiles":       { "bsonType": "bool" },
+          "hasInchi":        { "bsonType": "bool" },
+          "hasSynonyms":     { "bsonType": "bool" },
+          "hasIupac":        { "bsonType": "bool" },
+          "hasCitations":    { "bsonType": "bool" },
+          "hasReactionsList":{ "bsonType": "bool" },
+          "hasSpeciesHits":  { "bsonType": "bool" },
+          "hasKegg":         { "bsonType": "bool" },
+          "hasReactome":     { "bsonType": "bool" },
+          "hasWikiPathways": { "bsonType": "bool" },
+          "hasSpectraListed":{ "bsonType": "bool" },
+          "hasExactMass":    { "bsonType": "bool" },
+          "hasAverageMass":  { "bsonType": "bool" },
+          "hasCharge":       { "bsonType": "bool" }
+        }
+      },
+
+      "counts": {
+        "bsonType": "object",
+        "properties": {
+          "synonyms":            { "bsonType": "int" },
+          "iupac":               { "bsonType": "int" },
+          "citations":           { "bsonType": "int" },
+          "reactions":           { "bsonType": "int" },
+          "species_hits":        { "bsonType": "int" },
+          "species_total_assays":{ "bsonType": "int" },
+          "kegg":                { "bsonType": "int" },
+          "reactome":            { "bsonType": "int" },
+          "wikipathways":        { "bsonType": "int" },
+          "spectra":             { "bsonType": "int" }
+        }
+      },
+
+      "pathways": {
+        "bsonType": "object",
+        "properties": {
+          "kegg": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "id":   { "bsonType": "string" },
+                "name": { "bsonType": "string" },
+                "ko":   { "bsonType": "string" }
+              }
+            }
+          },
+          "reactome": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" }
+          },
+          "wikipathways": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" }
+          }
+        }
+      },
+
+      "citations": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "object",
+          "properties": {
+            "source":   { "bsonType": "string" },
+            "type":     { "bsonType": "string" },
+            "value":    { "bsonType": "string" },
+            "title":    { "bsonType": "string" },
+            "doi":      { "bsonType": "string" },
+            "abstract": { "bsonType": "string" },
+            "author":   { "bsonType": "string" }
+          }
+        }
+      },
+
+      "reactions": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "object",
+          "properties": {
+            "name":    { "bsonType": "string" },
+            "id":      { "bsonType": "string" },
+            "biopax2": { "bsonType": "string" },
+            "cmlreact":{ "bsonType": "string" }
+          }
+        }
+      },
+
+      "species_hits": {
+        "bsonType": "array",
+        "items": {
+          "bsonType": "object",
+          "properties": {
+            "species":   { "bsonType": "string" },
+            "study_ids": {
+              "bsonType": "array",
+              "items": { "bsonType": "string" }
+            },
+            "assay_sum": { "bsonType": "int" }
+          }
+        }
+      },
+
+      "spectrum_ids": {
+        "bsonType": "array",
+        "items": { "bsonType": "string" }
+      },
+
+      "spectra_count": {
+        "bsonType": "int"
+      },
+
+      "structure_molfile": {
+        "bsonType": "string"
+      },
+
+      "raw": {
+        "bsonType": "object",
+        "properties": {
+          "flags": {
+            "bsonType": "object",
+            "additionalProperties": {
+              "bsonType": "string"
+            }
+          },
+          "id": {
+            "bsonType": "string"
+          },
+          "name": {
+            "bsonType": "string"
+          },
+          "definition": {
+            "bsonType": "string"
+          },
+          "iupacNames": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" }
+          },
+          "smiles": {
+            "bsonType": "string"
+          },
+          "inchi": {
+            "bsonType": "string"
+          },
+          "inchiKey": {
+            "bsonType": "string"
+          },
+          "charge": {
+            "bsonType": "int"
+          },
+          "averagemass": {
+            "bsonType": "double"
+          },
+          "exactmass": {
+            "bsonType": "double"
+          },
+          "formula": {
+            "bsonType": "string"
+          },
+
+          "species": {
+            "bsonType": "object"
+          },
+
+          "synonyms": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" }
+          },
+
+          "pathways": {
+            "bsonType": "object",
+            "properties": {
+              "WikiPathways":  { "bsonType": "object" },
+              "KEGGPathways":  {
+                "bsonType": "array",
+                "items": { "bsonType": "object" }
+              },
+              "ReactomePathways": { "bsonType": "object" }
+            }
+          },
+
+          "spectra": {
+            "bsonType": "object",
+            "properties": {
+              "NMR": {
+                "bsonType": "array",
+                "items": { "bsonType": "object" }
+              },
+              "MS": {
+                "bsonType": "array",
+                "items": { "bsonType": "object" }
+              }
+            }
+          },
+
+          "citations": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "source":   { "bsonType": "string" },
+                "type":     { "bsonType": "string" },
+                "value":    { "bsonType": "string" },
+                "title":    { "bsonType": "string" },
+                "doi":      { "bsonType": "string" },
+                "abstract": { "bsonType": "string" },
+                "author":   { "bsonType": "string" }
+              }
+            }
+          },
+
+          "reactions": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "name":    { "bsonType": "string" },
+                "id":      { "bsonType": "string" },
+                "biopax2": { "bsonType": "string" },
+                "cmlreact":{ "bsonType": "string" }
+              }
+            }
+          },
+
+          "structure": {
+            "bsonType": "string"
+          },
+
+          "spectrum_ids": {
+            "bsonType": "array",
+            "items": { "bsonType": "string" }
+          },
+
+          "spectra_count": {
+            "bsonType": "int"
+          }
+        }
+      }
+    }
+  }
+}

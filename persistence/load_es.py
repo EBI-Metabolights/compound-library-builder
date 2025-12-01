@@ -300,6 +300,23 @@ def normalize_compound(d):
     spectrum_ids = d.get("spectrum_ids") or []
     spectra_count = int(d.get("spectra_count") or 0)
 
+    # ---- keep citations/reactions mapping-safe; full originals stay in d/raw ----
+    allowed_cit_keys = {"source", "type", "value", "title", "doi", "author", "year"}
+    clean_citations = []
+    for c in citations:
+        if not isinstance(c, dict):
+            continue
+        clean_citations.append({k: v for k, v in c.items() if k in allowed_cit_keys})
+    citations = clean_citations
+
+    allowed_rxn_keys = {"id", "name"}
+    clean_reactions = []
+    for r in reactions:
+        if not isinstance(r, dict):
+            continue
+        clean_reactions.append({k: v for k, v in r.items() if k in allowed_rxn_keys})
+    reactions = clean_reactions
+
     doc = {
         "id": d.get("id"),
         "name": d.get("name"),
@@ -681,6 +698,7 @@ def main():
                     spec_actions = []
                     if errs:
                         print(f"[SPECTRA BULK ERR] {len(errs)}", file=sys.stderr)
+                        dump_bulk_errs(errs, 'SPECTRA')
 
     # final flush (if indexing)
     if not args.dry_run:
