@@ -1,7 +1,6 @@
 import requests
-from pydantic import BaseModel
 
-from config_classes.builder_config_files import WikipathwaysConfig
+from compound_common.config_classes import WikipathwaysConfig
 
 compounds_endpoint = 'https://www.ebi.ac.uk:443/metabolights/ws/compounds/list'
 

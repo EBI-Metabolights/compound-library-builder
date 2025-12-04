@@ -1,7 +1,7 @@
 import io
 from typing import List
 from retrying import retry
-from config_classes.ftp_config import FTPConfig
+from compound_common.config_classes import FTPConfig
 
 import ftplib
 import pandas as pd

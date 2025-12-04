@@ -1,7 +1,7 @@
 import sys
 
-from argparse_classes.parsers import ArgParsers
-from config_classes.reactome_builder_config import ReactomeFileBuilderConfig
+from compound_common.argparse_classes.parsers import ArgParsers
+from compound_common.config_classes.reactome_builder_config import ReactomeFileBuilderConfig
 from reference_file_builders.reactome_file_builder.reactome_file_builder import (
     ReactomeFileBuilder,
 )

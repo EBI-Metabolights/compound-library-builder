@@ -2,8 +2,9 @@ import json
 import logging
 from typing import Any, Union
 
-from config_classes.transport.redis_config import RedisConfig
 import redis
+
+from compound_common.config_classes.transport.redis_config import RedisConfig
 
 
 class RedisClient:

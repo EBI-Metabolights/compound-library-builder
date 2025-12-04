@@ -1,9 +1,9 @@
 from accession_diff_analyzer.analyzer import Analyzer
-from argparse_classes.parsers import ArgParsers
+from compound_common.argparse_classes import ArgParsers
 import requests
 
 from compound_common.transport_clients.ebi_ftp_handler import EBIFTPHandler
-from config_classes.ftp_config import FTPConfig
+from compound_common.config_classes import FTPConfig
 
 
 def main(args):

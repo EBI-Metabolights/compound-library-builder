@@ -3,11 +3,11 @@ import sys
 import requests
 import yaml
 
-from argparse_classes.parsers import ArgParsers
-from compound_common.transport_clients.redis_client import RedisClient
-from compound_library_builder.redis_queue_manager.redis_queue_manager import CompoundRedisQueueManager
+from compound_common.argparse_classes import ArgParsers
+from compound_common.transport_clients.redis.redis_client import RedisClient
+from compound_common.transport_clients.redis_queue_manager import CompoundRedisQueueManager
 
-from config_classes.transport.redis_config import (
+from compound_common.config_classes import (
     RedisConfig,
     CompoundBuilderRedisConfig,
 )

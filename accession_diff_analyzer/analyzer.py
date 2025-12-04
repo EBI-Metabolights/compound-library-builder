@@ -13,10 +13,10 @@ from accession_diff_analyzer.analyzer_dataclasses import OverviewMetrics, IDWatc
 from compound_common.transport_clients.ebi_ftp_handler import EBIFTPHandler
 from compound_common.doc_clients.xml_utils import XmlResponseUtils
 from compound_common.doc_clients.jinja_wrapper import JinjaWrapper
-from config_classes.ftp_config import FTPConfig
+from compound_common.config_classes import FTPConfig
 
 
-from function_wrappers.checker_wrappers.file_write_exception_angel import (
+from compound_common.function_wrappers.checker_wrappers.file_write_exception_angel import (
     file_rw_exception_angel,
 )
 

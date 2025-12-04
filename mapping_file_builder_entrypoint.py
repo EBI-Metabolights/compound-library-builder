@@ -2,8 +2,8 @@ import sys
 
 import yaml
 
-from argparse_classes.parsers import ArgParsers
-from config_classes.mapping_file_builder_config import MappingFileBuilderConfig
+from compound_common.argparse_classes import ArgParsers
+from compound_common.config_classes import MappingFileBuilderConfig
 from reference_file_builders.mapping_file_builder.mapping_file_builder import build
 
 
