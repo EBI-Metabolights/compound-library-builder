@@ -5,16 +5,13 @@ from typing import List
 import yaml
 import requests
 
-from argparse_classes.parsers import ArgParsers
+from compound_common.config_classes.builder_config_files import MtblsWsUrls
+from compound_common.config_classes.transport.redis_config import CompoundBuilderRedisConfig
 from compound_common.dir_utils import DirUtils
 from compound_common.list_utils import ListUtils
-from compound_common.transport_clients.redis_client import RedisClient
-from config_classes.builder_config_files import MtblsWsUrls
-from config_classes.transport.redis_config import (
-    RedisConfig,
-    CompoundBuilderRedisConfig,
-)
-from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
+from compound_common.transport_clients.redis.redis_client import RedisClient
+
+from compound_common.function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 
 
 class CompoundRedisQueueManager:

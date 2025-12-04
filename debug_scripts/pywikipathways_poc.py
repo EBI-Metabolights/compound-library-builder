@@ -1,4 +1,4 @@
-from config_classes.builder_config_files import WikipathwaysConfig
+from compound_common.config_classes import WikipathwaysConfig
 import requests
 import pywikipathways as pwpw
 config = WikipathwaysConfig()

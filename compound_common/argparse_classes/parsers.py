@@ -1,6 +1,6 @@
 import argparse
 
-from argparse_classes.actions.readable_dir import ReadableDir
+from compound_common.argparse_classes.actions.readable_dir import ReadableDir
 
 
 class ArgParsers:
@@ -52,6 +52,10 @@ class ArgParsers:
             "--compound_queue_config",
             help="Absolute path to the config file for the compound queue",
         )
+        parser.add_argument("-db",
+                            "--database",
+                            action="store_true",
+                            help="save compounds to database rather than to filesystem")
         return parser
 
     @staticmethod
@@ -115,4 +119,59 @@ class ArgParsers:
     def accession_diff_parser() -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         parser.add_argument("-t", "--token", help="MetaboLights API Token")
+        return parser
+
+    @staticmethod
+    def mongo_to_elastic_parser():
+        parser = argparse.ArgumentParser(
+            description="Project Mongo compounds into Elasticsearch index"
+        )
+        parser.add_argument(
+            "--mongo-uri",
+            default="mongodb://localhost:27017",
+            help="MongoDB connection string",
+        )
+        parser.add_argument(
+            "--mongo-db",
+            default="compound_library",
+            help="Mongo database name",
+        )
+        parser.add_argument(
+            "--mongo-coll",
+            default="compounds",
+            help="Mongo collection name",
+        )
+        parser.add_argument(
+            "--es",
+            required=True,
+            help="Elasticsearch base URL, e.g. https://host/es",
+        )
+        parser.add_argument(
+            "--index",
+            default="compounds_search_v1",
+            help="Elasticsearch index name",
+        )
+        parser.add_argument(
+            "--api-key",
+            help="Elasticsearch API key (preferred over basic auth)",
+        )
+        parser.add_argument(
+            "--user",
+            help="Elasticsearch username (if not using API key)",
+        )
+        parser.add_argument(
+            "--password",
+            help="Elasticsearch password (if not using API key)",
+        )
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=100,
+            help="Number of documents per bulk request",
+        )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Delete and recreate index before reindexing",
+        )
         return parser

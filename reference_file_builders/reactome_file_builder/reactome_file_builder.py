@@ -1,7 +1,7 @@
 import requests
 
-from config_classes.reactome_builder_config import ReactomeFileBuilderConfig
-from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
+from compound_common.config_classes import ReactomeFileBuilderConfig
+from compound_common.function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from reference_file_builders.mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
 )

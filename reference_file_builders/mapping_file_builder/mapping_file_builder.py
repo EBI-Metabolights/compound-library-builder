@@ -10,8 +10,8 @@ import yaml
 
 from compound_common.list_utils import ListUtils
 from compound_common.timer import Timer
-from config_classes.mapping_file_builder_config import MappingFileBuilderConfig
-from function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
+from compound_common.config_classes import MappingFileBuilderConfig
+from compound_common.function_wrappers.builder_wrappers.http_exception_angel import http_exception_angel
 from reference_file_builders.mapping_file_builder.managers.mapping_persistence_manager import (
     MappingPersistenceManager,
 )

@@ -128,8 +128,11 @@ class WikipathwaysConfig(BaseModel):
     xref_query_params: str = '&codes=Ce&format=json'
 
 class MiscUrls(BaseModel):
-    chebi_api: str = (
+    chebi_api_old: str = (
         "https://www.ebi.ac.uk/webservices/chebi/2.0/test/getCompleteEntity?chebiId="
+    )
+    chebi_api: str = (
+
     )
     cts_api: str = "http://cts.fiehnlab.ucdavis.edu/service/compound/"
     cactus_api: str = "https://cactus.nci.nih.gov/chemical/structure/"

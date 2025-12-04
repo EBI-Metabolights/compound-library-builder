@@ -1,4 +1,5 @@
 from typing import List
+from urllib.parse import quote
 
 
 class ListUtils:
@@ -31,3 +32,12 @@ class ListUtils:
         :return: List of ids found only in webservice
         """
         return list(set(webservice_list) - set(filesystem_list))
+
+    @staticmethod
+    def mtblc_list_to_encoded_chebi(ids):
+        # Convert MTBLCxxxx → CHEBI:xxxx
+        chebi_ids = [f"CHEBI:{item.replace('MTBLC', '')}" for item in ids]
+        # Join with comma + space
+        joined = ", ".join(chebi_ids)
+        # URL-encode the whole string
+        return quote(joined)
